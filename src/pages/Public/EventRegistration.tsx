@@ -271,152 +271,168 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
   }
 
   return (
-    <div className="max-w-6xl mx-auto animate-in">
-      <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-primary transition-colors mb-10 text-sm font-black uppercase tracking-tighter no-print">
-        <span className="material-symbols-outlined font-bold">arrow_back</span>
-        Programação do Auditório
-      </Link>
+    <div className="bg-institutional min-h-[calc(100vh-64px)] py-8 px-4">
+      <div className="max-w-6xl mx-auto animate-in">
+        <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-primary transition-colors mb-10 text-sm font-black uppercase tracking-tighter no-print">
+          <span className="material-symbols-outlined font-bold">arrow_back</span>
+          Programação do Auditório
+        </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10">
-        <div className="lg:col-span-7 space-y-6 md:space-y-8">
-          <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-gray-100">
-            <span className="inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-primary-light text-primary mb-6">
-              Evento Institucional
-            </span>
-            <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-6 leading-[1.1] tracking-tight">{evento.nome}</h2>
-            <p className="text-gray-500 text-lg md:text-xl leading-relaxed mb-10">{evento.descricao}</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:grid-cols-2 md:gap-6">
-              <div className="flex items-center gap-5 p-6 bg-secondary/50 rounded-[2rem] border border-gray-100/50">
-                <div className="size-14 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
-                  <span className="material-symbols-outlined text-primary text-2xl">event</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10">
+          <div className="lg:col-span-7 space-y-6 md:space-y-8">
+            <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-gray-100">
+              {/* Event Image */}
+              {evento.imagem && (
+                <div className="mb-8 -mx-6 md:-mx-10 -mt-6 md:-mt-10">
+                  <img
+                    src={evento.imagem}
+                    alt={evento.nome}
+                    className="w-full h-64 md:h-80 object-cover rounded-t-[2rem] md:rounded-t-[3rem]"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
                 </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Quando</p>
-                  <p className="text-base font-black text-gray-800">{new Date(evento.data).toLocaleDateString('pt-BR')}</p>
-                  <p className="text-xs font-bold text-gray-500">{evento.horario}</p>
+              )}
+
+              <span className="inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-primary-light text-primary mb-6">
+                Evento Institucional
+              </span>
+              <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-6 leading-[1.1] tracking-tight">{evento.nome}</h2>
+              <p className="text-gray-500 text-lg md:text-xl leading-relaxed mb-10">{evento.descricao}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:grid-cols-2 md:gap-6">
+                <div className="flex items-center gap-5 p-6 bg-secondary/50 rounded-[2rem] border border-gray-100/50">
+                  <div className="size-14 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                    <span className="material-symbols-outlined text-primary text-2xl">event</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Quando</p>
+                    <p className="text-base font-black text-gray-800">{new Date(evento.data).toLocaleDateString('pt-BR')}</p>
+                    <p className="text-xs font-bold text-gray-500">{evento.horario}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-5 p-6 bg-secondary/50 rounded-[2rem] border border-gray-100/50">
-                <div className="size-14 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
-                  <span className="material-symbols-outlined text-primary text-2xl">meeting_room</span>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Onde</p>
-                  <p className="text-base font-black text-gray-800">{evento.local}</p>
-                  <p className="text-xs font-bold text-gray-500">Auditório UNINASSAU</p>
+                <div className="flex items-center gap-5 p-6 bg-secondary/50 rounded-[2rem] border border-gray-100/50">
+                  <div className="size-14 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                    <span className="material-symbols-outlined text-primary text-2xl">meeting_room</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Onde</p>
+                    <p className="text-base font-black text-gray-800">{evento.local}</p>
+                    <p className="text-xs font-bold text-gray-500">Auditório UNINASSAU</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="lg:col-span-5">
-          <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-primary/5 border border-gray-100 lg:sticky lg:top-24">
-            <h3 className="text-2xl font-black mb-8 flex items-center gap-3">
-              <div className="size-8 bg-primary rounded-lg flex items-center justify-center shadow-sm">
-                <span className="material-symbols-outlined text-white text-lg">edit_note</span>
-              </div>
-              Confirmar Presença
-            </h3>
+          <div className="lg:col-span-5">
+            <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-primary/5 border border-gray-100 lg:sticky lg:top-24">
+              <h3 className="text-2xl font-black mb-8 flex items-center gap-3">
+                <div className="size-8 bg-primary rounded-lg flex items-center justify-center shadow-sm">
+                  <span className="material-symbols-outlined text-white text-lg">edit_note</span>
+                </div>
+                Confirmar Presença
+              </h3>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <Input
-                label="Nome Completo"
-                placeholder="Seu nome completo"
-                value={formData.nomeCompleto}
-                onChange={e => setFormData({ ...formData, nomeCompleto: e.target.value })}
-                required
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <Input
-                  label="Telefone"
-                  type="tel"
-                  placeholder="(00) 00000-0000"
-                  value={formData.telefone}
-                  onChange={e => setFormData({ ...formData, telefone: maskPhone(e.target.value) })}
+                  label="Nome Completo"
+                  placeholder="Seu nome completo"
+                  value={formData.nomeCompleto}
+                  onChange={e => setFormData({ ...formData, nomeCompleto: e.target.value })}
                   required
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Telefone"
+                    type="tel"
+                    placeholder="(00) 00000-0000"
+                    value={formData.telefone}
+                    onChange={e => setFormData({ ...formData, telefone: maskPhone(e.target.value) })}
+                    required
+                  />
+                  <Input
+                    label="CPF"
+                    placeholder="000.000.000-00"
+                    value={formData.cpf}
+                    onChange={e => setFormData({ ...formData, cpf: maskCPF(e.target.value) })}
+                    required
+                  />
+                </div>
+
                 <Input
-                  label="CPF"
-                  placeholder="000.000.000-00"
-                  value={formData.cpf}
-                  onChange={e => setFormData({ ...formData, cpf: maskCPF(e.target.value) })}
+                  label="E-mail"
+                  type="email"
+                  placeholder="exemplo@email.com"
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
+                  error={formData.email && !validateEmail(formData.email) ? "Formato de e-mail inválido." : undefined}
                   required
                 />
-              </div>
 
-              <Input
-                label="E-mail"
-                type="email"
-                placeholder="exemplo@email.com"
-                value={formData.email}
-                onChange={e => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
-                error={formData.email && !validateEmail(formData.email) ? "Formato de e-mail inválido." : undefined}
-                required
-              />
-
-              <Select
-                label="Escolaridade Atual"
-                placeholder="Selecione uma opção..."
-                value={formData.escolaridade}
-                onChange={e => setFormData({ ...formData, escolaridade: e.target.value })}
-                options={Object.values(Escolaridade).map(esc => ({ value: esc, label: esc }))}
-                required
-              />
-
-              {showGradInterest && (
-                <RadioGroup
-                  label="Você tem interesse em cursar uma graduação?"
-                  name="interesseGraduacao"
-                  options={['Sim', 'Não']}
-                  value={formData.interesseGraduacao}
-                  onChange={val => setFormData({ ...formData, interesseGraduacao: val })}
-                  required
-                />
-              )}
-
-              {showHigherInterest && (
-                <RadioGroup
-                  label="Você tem interesse em:"
-                  name="interesseTipo"
-                  options={['Segunda Graduação', 'Pós-graduação', 'Não tenho interesse no momento']}
-                  value={formData.interesseTipo}
-                  onChange={val => setFormData({ ...formData, interesseTipo: val })}
-                  required
-                />
-              )}
-
-              {showCourseField && (
                 <Select
-                  label="Qual curso você tem interesse?"
-                  placeholder="Selecione o curso..."
-                  value={formData.cursoInteresse}
-                  onChange={e => setFormData({ ...formData, cursoInteresse: e.target.value })}
-                  options={COURSES.map(course => ({ value: course, label: course }))}
+                  label="Escolaridade Atual"
+                  placeholder="Selecione uma opção..."
+                  value={formData.escolaridade}
+                  onChange={e => setFormData({ ...formData, escolaridade: e.target.value })}
+                  options={Object.values(Escolaridade).map(esc => ({ value: esc, label: esc }))}
                   required
                 />
-              )}
 
-              <Button
-                type="submit"
-                disabled={!isFormValid || isSubmitting}
-                isLoading={isSubmitting}
-                fullWidth
-                variant={!isFormValid || isSubmitting ? 'secondary' : 'primary'}
-                icon={isFormValid && !isSubmitting ? 'arrow_forward' : undefined}
-                className={!isFormValid || isSubmitting ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none border-none' : ''}
-              >
-                {isFormValid ? 'CONFIRMAR MINHA VAGA' : 'COMPLETE OS CAMPOS CORRETAMENTE'}
-              </Button>
+                {showGradInterest && (
+                  <RadioGroup
+                    label="Você tem interesse em cursar uma graduação?"
+                    name="interesseGraduacao"
+                    options={['Sim', 'Não']}
+                    value={formData.interesseGraduacao}
+                    onChange={val => setFormData({ ...formData, interesseGraduacao: val })}
+                    required
+                  />
+                )}
 
-              <div className="flex gap-2 p-4 bg-blue-50/30 rounded-2xl border border-blue-100/50 mt-6">
-                <span className="material-symbols-outlined text-primary text-lg">info</span>
-                <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                  Ao confirmar, seus dados serão compartilhados com a organização para controle de presença e contato institucional.
-                </p>
-              </div>
-            </form>
+                {showHigherInterest && (
+                  <RadioGroup
+                    label="Você tem interesse em:"
+                    name="interesseTipo"
+                    options={['Segunda Graduação', 'Pós-graduação', 'Não tenho interesse no momento']}
+                    value={formData.interesseTipo}
+                    onChange={val => setFormData({ ...formData, interesseTipo: val })}
+                    required
+                  />
+                )}
+
+                {showCourseField && (
+                  <Select
+                    label="Qual curso você tem interesse?"
+                    placeholder="Selecione o curso..."
+                    value={formData.cursoInteresse}
+                    onChange={e => setFormData({ ...formData, cursoInteresse: e.target.value })}
+                    options={COURSES.map(course => ({ value: course, label: course }))}
+                    required
+                  />
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={!isFormValid || isSubmitting}
+                  isLoading={isSubmitting}
+                  fullWidth
+                  variant={!isFormValid || isSubmitting ? 'secondary' : 'primary'}
+                  icon={isFormValid && !isSubmitting ? 'arrow_forward' : undefined}
+                  className={!isFormValid || isSubmitting ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none border-none' : ''}
+                >
+                  {isFormValid ? 'CONFIRMAR MINHA VAGA' : 'COMPLETE OS CAMPOS CORRETAMENTE'}
+                </Button>
+
+                <div className="flex gap-2 p-4 bg-blue-50/30 rounded-2xl border border-blue-100/50 mt-6">
+                  <span className="material-symbols-outlined text-primary text-lg">info</span>
+                  <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
+                    Ao confirmar, seus dados serão compartilhados com a organização para controle de presença e contato institucional.
+                  </p>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>

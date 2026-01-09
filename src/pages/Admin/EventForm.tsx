@@ -8,18 +8,22 @@ import { Button } from '../../components/ui/Button';
 
 interface AdminEventFormProps {
   onSave: (evento: any) => void;
+  onUpload?: (file: File) => Promise<string>;
   initialData?: Evento;
 }
 
-const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, initialData }) => {
+const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, onUpload, initialData }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     nome: '',
     data: '',
     horario: '',
     descricao: '',
-    local: 'Auditório UNINASSAU Olinda'
+    local: 'Auditório UNINASSAU Olinda',
+    imagem: ''
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -28,23 +32,39 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, initialData }) 
         data: initialData.data,
         horario: initialData.horario,
         descricao: initialData.descricao,
-        local: initialData.local
+        local: initialData.local,
+        imagem: initialData.imagem || ''
       });
     }
   }, [initialData]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (initialData) {
-      onSave({ ...initialData, ...formData });
-    } else {
-      onSave(formData);
+    setIsUploading(true);
+    try {
+      let imageUrl = formData.imagem;
+      if (selectedFile && onUpload) {
+        imageUrl = await onUpload(selectedFile);
+      }
+
+      const finalData = { ...formData, imagem: imageUrl };
+
+      if (initialData) {
+        onSave({ ...initialData, ...finalData });
+      } else {
+        onSave(finalData);
+      }
+      navigate('/admin');
+    } catch (error) {
+      console.error('Erro ao salvar evento:', error);
+      alert('Erro ao salvar evento. Verifique a imagem e tente novamente.');
+    } finally {
+      setIsUploading(false);
     }
-    navigate('/admin');
   };
 
   return (
-    <div className="max-w-3xl mx-auto animate-in">
+    <div className="container mx-auto px-4 py-8 animate-in">
       <div className="mb-6">
         <Link to={initialData ? `/admin/evento/${initialData.id}` : "/admin"} className="text-gray-500 hover:text-primary font-bold flex items-center gap-1 text-sm">
           <span className="material-symbols-outlined text-lg">arrow_back</span>
@@ -93,6 +113,58 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, initialData }) 
             required
           />
 
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Imagem do Evento (Opcional)</label>
+            <div className="flex flex-col gap-4">
+              {formData.imagem && !selectedFile && (
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <img src={formData.imagem} alt="Preview" className="size-20 rounded-xl object-cover border border-gray-200" />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-gray-700">Imagem atual</p>
+                    <p className="text-[10px] text-gray-400 truncate mt-1">{formData.imagem}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, imagem: '' })}
+                    className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-black hover:bg-red-100 transition-colors flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    Remover
+                  </button>
+                </div>
+              )}
+              {selectedFile && (
+                <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                  <div className="size-20 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary text-3xl">image</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-primary">Nova imagem selecionada</p>
+                    <p className="text-[10px] text-gray-600 mt-1">{selectedFile.name}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFile(null)}
+                    className="px-4 py-2 bg-white text-gray-600 rounded-xl text-xs font-black hover:bg-gray-50 transition-colors border border-gray-200"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+              {!selectedFile && (
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-primary file:text-white hover:file:bg-primary-dark transition-all cursor-pointer"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-2 font-medium">Selecione uma imagem JPG, PNG ou WebP</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           <Textarea
             label="Descrição"
             placeholder="Breve descrição do evento..."
@@ -104,8 +176,8 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, initialData }) 
 
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
             <Link to={initialData ? `/admin/evento/${initialData.id}` : "/admin"} className="px-6 py-4 font-bold text-gray-400 hover:text-gray-600 transition-all flex items-center justify-center">Cancelar</Link>
-            <Button type="submit" fullWidth className="sm:w-auto">
-              {initialData ? 'Salvar Alterações' : 'Criar Evento'}
+            <Button type="submit" fullWidth className="sm:w-auto" disabled={isUploading}>
+              {isUploading ? 'Processando...' : (initialData ? 'Salvar Alterações' : 'Criar Evento')}
             </Button>
           </div>
         </form>

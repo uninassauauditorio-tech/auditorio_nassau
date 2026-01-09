@@ -10,6 +10,14 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+.bg-institutional {
+    background-image: linear-gradient(rgba(246, 247, 248, 0.4), rgba(246, 247, 248, 0.4)), url('/fundo.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: calc(100vh - 64px);
+}
+
 /* Material Symbols */
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;

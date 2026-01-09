@@ -6,7 +6,9 @@ export interface EventService {
     createEvent(evento: Omit<Evento, 'id' | 'inscritos' | 'encerrado'>): Promise<Evento>;
     updateEvent(evento: Evento): Promise<Evento>;
     closeEvent(id: string): Promise<void>;
+    deleteEvent(id: string): Promise<void>;
     registerSubscriber(eventoId: string, inscrito: Omit<Inscrito, 'id' | 'dataInscricao'>): Promise<void>;
+    uploadImage(file: File): Promise<string>;
     isAdmin(): boolean;
     setAdmin(isAdmin: boolean): void;
 }

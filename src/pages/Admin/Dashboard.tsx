@@ -9,19 +9,66 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
 
-  const filteredEventos = eventos.filter(e =>
+  // Apply date filter
+  const dateFilteredEventos = eventos.filter(e => {
+    if (!dateStart && !dateEnd) return true;
+    const eventDate = new Date(e.data);
+    const start = dateStart ? new Date(dateStart) : null;
+    const end = dateEnd ? new Date(dateEnd) : null;
+
+    if (start && end) {
+      return eventDate >= start && eventDate <= end;
+    } else if (start) {
+      return eventDate >= start;
+    } else if (end) {
+      return eventDate <= end;
+    }
+    return true;
+  });
+
+  // Apply search filter
+  const filteredEventos = dateFilteredEventos.filter(e =>
     !e.encerrado && e.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const stats = {
-    total: eventos.length,
-    ativos: eventos.filter(e => !e.encerrado).length,
-    inscritos: eventos.reduce((acc, e) => acc + e.inscritos.length, 0)
+  // Calculate comprehensive metrics
+  const totalParticipants = dateFilteredEventos.reduce((acc, e) => acc + e.inscritos.length, 0);
+  const avgParticipants = dateFilteredEventos.length > 0
+    ? (totalParticipants / dateFilteredEventos.length).toFixed(1)
+    : '0';
+
+  // Interest breakdown
+  const interests = {
+    graduacao: 0,
+    pos: 0,
+    segunda: 0
   };
 
+  dateFilteredEventos.forEach(evento => {
+    evento.inscritos.forEach(inscrito => {
+      if (inscrito.interesseGraduacao === 'Sim' || inscrito.interesseTipo === 'Graduação') {
+        interests.graduacao++;
+      } else if (inscrito.interesseTipo === 'Pós-graduação') {
+        interests.pos++;
+      } else if (inscrito.interesseTipo === 'Segunda Graduação') {
+        interests.segunda++;
+      }
+    });
+  });
+
+  const clearFilters = () => {
+    setDateStart('');
+    setDateEnd('');
+    setSearchTerm('');
+  };
+
+  const hasActiveFilters = dateStart || dateEnd;
+
   return (
-    <div className="max-w-6xl mx-auto animate-in">
+    <div className="container mx-auto px-4 py-8 animate-in">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div className="px-4 md:px-0">
           <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">Painel de Controle</h2>
@@ -45,21 +92,102 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-12 px-4 md:px-0">
+      {/* Date Filters */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8 px-4 md:px-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">filter_alt</span>
+            Filtros e Análise de Período
+          </h3>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-xs font-bold text-primary hover:text-primary-dark transition-colors flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+              Limpar Filtros
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Data Inicial</label>
+            <input
+              type="date"
+              value={dateStart}
+              onChange={(e) => setDateStart(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Data Final</label>
+            <input
+              type="date"
+              value={dateEnd}
+              onChange={(e) => setDateEnd(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+            />
+          </div>
+        </div>
+        {hasActiveFilters && (
+          <p className="mt-3 text-xs text-gray-500 font-medium">
+            📊 Exibindo dados de {dateFilteredEventos.length} {dateFilteredEventos.length === 1 ? 'evento' : 'eventos'} no período selecionado
+          </p>
+        )}
+      </div>
+
+      {/* Comprehensive Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12 px-4 md:px-0">
+        <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group">
+          <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 size-20 md:size-24 bg-primary-light rounded-full group-hover:scale-110 transition-transform"></div>
+          <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-widest mb-1 relative z-10">Eventos no Período</p>
+          <p className="text-4xl md:text-5xl font-black text-primary relative z-10">{dateFilteredEventos.length}</p>
+        </div>
         <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group">
           <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 size-20 md:size-24 bg-gray-50 rounded-full group-hover:scale-110 transition-transform"></div>
-          <p className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1 relative z-10">Eventos Totais</p>
-          <p className="text-4xl md:text-5xl font-black text-gray-900 relative z-10">{stats.total}</p>
+          <p className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1 relative z-10">Total Participantes</p>
+          <p className="text-4xl md:text-5xl font-black text-gray-900 relative z-10">{totalParticipants}</p>
+        </div>
+        <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group">
+          <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 size-20 md:size-24 bg-gray-50 rounded-full group-hover:scale-110 transition-transform"></div>
+          <p className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1 relative z-10">Média por Evento</p>
+          <p className="text-4xl md:text-5xl font-black text-gray-900 relative z-10">{avgParticipants}</p>
         </div>
         <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group">
           <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 size-20 md:size-24 bg-primary-light rounded-full group-hover:scale-110 transition-transform"></div>
-          <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-widest mb-1 relative z-10">Em Aberto</p>
-          <p className="text-4xl md:text-5xl font-black text-primary relative z-10">{stats.ativos}</p>
+          <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-widest mb-1 relative z-10">Eventos Ativos</p>
+          <p className="text-4xl md:text-5xl font-black text-primary relative z-10">{eventos.filter(e => !e.encerrado).length}</p>
         </div>
-        <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group sm:col-span-2 lg:col-span-1">
-          <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 size-20 md:size-24 bg-gray-50 rounded-full group-hover:scale-110 transition-transform"></div>
-          <p className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1 relative z-10">Total Inscritos</p>
-          <p className="text-4xl md:text-5xl font-black text-gray-900 relative z-10">{stats.inscritos}</p>
+      </div>
+
+      {/* Interest Breakdown */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8 px-4 md:px-6">
+        <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary">school</span>
+          Perfil de Interesse dos Participantes
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-2xl border border-blue-100">
+            <div>
+              <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">Graduação</p>
+              <p className="text-3xl font-black text-blue-700 mt-1">{interests.graduacao}</p>
+            </div>
+            <span className="material-symbols-outlined text-4xl text-blue-300">school</span>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-purple-50 rounded-2xl border border-purple-100">
+            <div>
+              <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Pós-graduação</p>
+              <p className="text-3xl font-black text-purple-700 mt-1">{interests.pos}</p>
+            </div>
+            <span className="material-symbols-outlined text-4xl text-purple-300">workspace_premium</span>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-green-50 rounded-2xl border border-green-100">
+            <div>
+              <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Segunda Graduação</p>
+              <p className="text-3xl font-black text-green-700 mt-1">{interests.segunda}</p>
+            </div>
+            <span className="material-symbols-outlined text-4xl text-green-300">auto_stories</span>
+          </div>
         </div>
       </div>
 

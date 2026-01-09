@@ -8,6 +8,7 @@ export interface Evento {
   local: string;
   encerrado: boolean;
   inscritos: Inscrito[];
+  imagem?: string;
 }
 
 export interface Inscrito {

@@ -15,11 +15,23 @@ import PublicEventRegistration from './pages/Public/EventRegistration';
 const App: React.FC = () => {
   const store = useStore();
 
+  // ✅ CRITICAL: Wait for auth to be ready before rendering routes
+  if (!store.authReady) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-secondary">
+        <div className="text-center">
+          <div className="size-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 font-bold">Inicializando sistema...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <HashRouter>
       <div className="flex flex-col min-h-screen bg-secondary">
         <Header isAdmin={store.isAdmin} onLogout={store.logout} />
-        <main className="flex-grow container mx-auto px-4 py-8">
+        <main className="flex-grow">
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<PublicEventList eventos={store.eventos} />} />
@@ -46,17 +58,17 @@ const App: React.FC = () => {
 
             <Route
               path="/admin/novo"
-              element={store.isAdmin ? <AdminEventForm onSave={store.addEvento} /> : <Navigate to="/admin/login" />}
+              element={store.isAdmin ? <AdminEventForm onSave={store.addEvento} onUpload={store.uploadImage} /> : <Navigate to="/admin/login" />}
             />
 
             <Route
               path="/admin/evento/:id"
-              element={store.isAdmin ? <AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} /> : <Navigate to="/admin/login" />}
+              element={store.isAdmin ? <AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} /> : <Navigate to="/admin/login" />}
             />
 
             <Route
               path="/admin/evento/:id/editar"
-              element={store.isAdmin ? <AdminEventEditWrapper eventos={store.eventos} onSave={store.updateEvento} /> : <Navigate to="/admin/login" />}
+              element={store.isAdmin ? <AdminEventEditWrapper eventos={store.eventos} onSave={store.updateEvento} onUpload={store.uploadImage} /> : <Navigate to="/admin/login" />}
             />
 
             {/* Catch All */}
@@ -69,13 +81,13 @@ const App: React.FC = () => {
   );
 };
 
-const AdminEventEditWrapper: React.FC<{ eventos: any[], onSave: (evento: any) => void }> = ({ eventos, onSave }) => {
+const AdminEventEditWrapper: React.FC<{ eventos: any[], onSave: (evento: any) => void, onUpload: (file: File) => Promise<string> }> = ({ eventos, onSave, onUpload }) => {
   const { id } = useParams<{ id: string }>();
   const evento = eventos.find(e => e.id === id);
 
   if (!evento) return <div className="text-center py-20 font-bold text-gray-400">Evento não localizado.</div>;
 
-  return <AdminEventForm onSave={onSave} initialData={evento} />;
+  return <AdminEventForm onSave={onSave} onUpload={onUpload} initialData={evento} />;
 };
 
 export default App;

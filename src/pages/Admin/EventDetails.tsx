@@ -8,9 +8,10 @@ import { exportToXLSX } from '../../utils/export';
 interface AdminEventDetailsProps {
   eventos: Evento[];
   onEnd: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd }) => {
+const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, onDelete }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const evento = eventos.find(e => e.id === id);
@@ -22,6 +23,13 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd })
   const handleEncerrar = () => {
     if (window.confirm("CONFIRMAÇÃO: Encerrar o registro de presença? Ninguém mais poderá confirmar participação online.")) {
       onEnd(evento.id);
+    }
+  };
+
+  const handleDelete = () => {
+    if (window.confirm(`ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nDeseja realmente excluir o evento "${evento.nome}"?\n\nTodos os registros de participantes também serão excluídos.`)) {
+      onDelete(evento.id);
+      navigate('/admin');
     }
   };
 
@@ -99,7 +107,7 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd })
   ];
 
   return (
-    <div className="max-w-6xl mx-auto animate-in">
+    <div className="container mx-auto px-4 py-8 animate-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 no-print px-4 md:px-0">
         <Link to="/admin" className="inline-flex items-center gap-2 text-gray-500 hover:text-primary transition-colors text-sm font-black uppercase tracking-tighter">
           <span className="material-symbols-outlined font-bold">arrow_back</span>
@@ -129,6 +137,13 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd })
               Encerrar Evento
             </button>
           )}
+          <button
+            onClick={handleDelete}
+            className="col-span-2 sm:col-auto bg-red-600 text-white border-2 border-red-600 px-4 md:px-5 py-2.5 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-lg">delete</span>
+            Excluir
+          </button>
         </div>
       </div>
 
@@ -204,7 +219,12 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd })
             {/* Print Header */}
             <div className="hidden print-only p-10 border-b-2 border-gray-200 text-center mb-8">
               <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-black text-primary">UNINASSAU</h1>
+                <div className="flex items-center gap-4">
+                  <h1 className="text-3xl font-black text-primary">UNINASSAU</h1>
+                  {evento.imagem && (
+                    <img src={evento.imagem} alt="" className="h-12 w-auto rounded object-contain" />
+                  )}
+                </div>
                 <div className="text-right">
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Lista de Presença Oficial</p>
                   <p className="text-xs font-bold">{new Date().toLocaleDateString('pt-BR')}</p>

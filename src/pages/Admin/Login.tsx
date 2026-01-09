@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/auth';
 
+import logo from '../../assets/img/logo.png';
+
 interface AdminLoginProps {
   onLogin: () => void;
 }
@@ -27,12 +29,10 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20">
+    <div className="max-w-md mx-auto py-8 mt-20">
       <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
         <div className="text-center mb-8">
-          <div className="size-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="material-symbols-outlined text-primary text-4xl">shield_person</span>
-          </div>
+          <img src={logo} alt="UNINASSAU" className="h-20 w-auto mx-auto mb-4 object-contain" />
           <h2 className="text-2xl font-black text-gray-900">Acesso Administrativo</h2>
           <p className="text-sm text-gray-500 mt-1">Uso restrito para colaboradores UNINASSAU</p>
         </div>

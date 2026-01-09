@@ -21,6 +21,7 @@ export class SupabaseEventService implements EventService {
                 descricao: event.descricao || '',
                 local: event.local,
                 encerrado: event.status === 'encerrado',
+                imagem: event.imagem_url,
                 inscritos: (event.registrations || []).map((reg: any) => ({
                     id: reg.id,
                     nomeCompleto: reg.nome,
@@ -60,6 +61,7 @@ export class SupabaseEventService implements EventService {
                 descricao: data.descricao || '',
                 local: data.local,
                 encerrado: data.status === 'encerrado',
+                imagem: data.imagem_url,
                 inscritos: (data.registrations || []).map((reg: any) => ({
                     id: reg.id,
                     nomeCompleto: reg.nome,
@@ -89,6 +91,7 @@ export class SupabaseEventService implements EventService {
                 data_evento: eventoData.data,
                 horario_evento: eventoData.horario,
                 local: eventoData.local,
+                imagem_url: (eventoData as any).imagem,
                 status: 'ativo'
             }])
             .select()
@@ -103,6 +106,7 @@ export class SupabaseEventService implements EventService {
             descricao: data.descricao || '',
             local: data.local,
             encerrado: false,
+            imagem: data.imagem_url,
             inscritos: []
         };
     }
@@ -117,6 +121,7 @@ export class SupabaseEventService implements EventService {
                 data_evento: evento.data,
                 horario_evento: evento.horario,
                 local: evento.local,
+                imagem_url: evento.imagem,
                 status: evento.encerrado ? 'encerrado' : 'ativo'
             })
             .eq('id', evento.id)
@@ -132,6 +137,7 @@ export class SupabaseEventService implements EventService {
             descricao: data.descricao || '',
             local: data.local,
             encerrado: data.status === 'encerrado',
+            imagem: data.imagem_url,
             inscritos: evento.inscritos
         };
     }
@@ -141,6 +147,16 @@ export class SupabaseEventService implements EventService {
         const { error } = await supabase
             .from('events')
             .update({ status: 'encerrado' })
+            .eq('id', id);
+
+        if (error) throw error;
+    }
+
+    async deleteEvent(id: string): Promise<void> {
+        if (!supabase) throw new Error('Supabase não configurado.');
+        const { error } = await supabase
+            .from('events')
+            .delete()
             .eq('id', id);
 
         if (error) throw error;
@@ -163,6 +179,26 @@ export class SupabaseEventService implements EventService {
             }]);
 
         if (error) throw error;
+    }
+
+    async uploadImage(file: File): Promise<string> {
+        if (!supabase) throw new Error('Supabase não configurado.');
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('imagem eventos')
+            .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('imagem eventos')
+            .getPublicUrl(filePath);
+
+        return publicUrl;
     }
 
     isAdmin(): boolean {
