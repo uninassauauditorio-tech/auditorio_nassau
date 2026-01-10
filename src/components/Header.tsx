@@ -19,10 +19,10 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, onLogout }) => {
   };
 
   return (
-    <header className="bg-white border-b sticky top-0 z-50 no-print">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-50 no-print bg-white/30 backdrop-blur-md border-b border-white/20">
+      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <Link to="/" className="flex items-center group">
-          <img src={logo} alt="UNINASSAU" className="h-12 md:h-14 w-auto object-contain" />
+          <img src={logo} alt="UNINASSAU" className="h-16 md:h-20 w-auto object-contain drop-shadow-sm" />
         </Link>
 
         <nav className="flex items-center gap-2">

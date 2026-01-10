@@ -29,7 +29,7 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
-      <div className="flex flex-col min-h-screen bg-secondary">
+      <div className="flex flex-col min-h-screen">
         <Header isAdmin={store.isAdmin} onLogout={store.logout} />
         <main className="flex-grow">
           <Routes>

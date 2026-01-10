@@ -9,6 +9,11 @@ interface PublicEventListProps {
 
 const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
+
+  // Get unique locations for the filter
+  const locations = Array.from(new Set(eventos.map(e => e.local))).sort();
 
   // Filter active events
   const activeEvents = eventos.filter(e => !e.encerrado);
@@ -20,33 +25,72 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
     return dateA - dateB;
   });
 
-  // Filter by search term
+  // Filter logic
   const filteredEvents = sortedEvents.filter(evento => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = (
       evento.nome.toLowerCase().includes(searchLower) ||
       evento.descricao.toLowerCase().includes(searchLower) ||
       evento.local.toLowerCase().includes(searchLower)
     );
+
+    const matchesLocation = locationFilter === 'all' || evento.local === locationFilter;
+
+    let matchesDate = true;
+    if (dateFilter !== 'all') {
+      const eventDate = new Date(evento.data);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (dateFilter === 'today') {
+        const eventDay = new Date(eventDate);
+        eventDay.setHours(0, 0, 0, 0);
+        matchesDate = eventDay.getTime() === today.getTime();
+      } else if (dateFilter === 'week') {
+        const nextWeek = new Date(today);
+        nextWeek.setDate(today.getDate() + 7);
+        matchesDate = eventDate >= today && eventDate <= nextWeek;
+      } else if (dateFilter === 'month') {
+        const nextMonth = new Date(today);
+        nextMonth.setMonth(today.getMonth() + 1);
+        matchesDate = eventDate >= today && eventDate <= nextMonth;
+      }
+    }
+
+    return matchesSearch && matchesLocation && matchesDate;
   });
 
   return (
-    <div className="bg-institutional min-h-[calc(100vh-64px)]">
-      <div className="max-w-5xl mx-auto py-8 px-4 animate-in">
-        {/* Header Section with Better Visibility */}
-        <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-lg border border-white/30 mb-10">
-          <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-3 tracking-tight">Eventos UNINASSAU</h2>
-          <p className="text-gray-800 text-lg font-semibold">Confira a programação e confirme sua presença nos próximos eventos.</p>
+    <div className="min-h-[calc(100vh-80px)]">
+      {/* Hero Section */}
+      <div
+        className="hero-section"
+        style={{ backgroundImage: 'url(/hero-bg-v2.png)' }}
+      >
+        <div className="hero-overlay"></div>
+        <div className="hero-content">
+          <h1 className="hero-title">Eventos UNINASSAU</h1>
+          <p className="hero-subtitle">
+            Confira a programação e confirme sua presença nos próximos eventos
+          </p>
+          <div className="hero-scroll-indicator">
+            <span className="hero-scroll-text">
+              Role para baixo para ver os eventos ativos e realizar sua inscrição
+            </span>
+            <span className="material-symbols-outlined text-3xl">expand_more</span>
+          </div>
         </div>
+      </div>
 
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative">
+      <div className="max-w-7xl mx-auto py-8 px-4 animate-in">
+        {/* Search and Filters Bar */}
+        <div className="mb-8 flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+          <div className="relative flex-grow w-full">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
             <input
               type="text"
               placeholder="Pesquisar eventos por nome, descrição ou local..."
-              className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all placeholder:text-gray-400"
+              className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all placeholder:text-gray-400 shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -59,95 +103,148 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
               </button>
             )}
           </div>
-          {searchTerm && (
-            <p className="mt-2 text-xs text-gray-500 font-medium">
-              {filteredEvents.length} {filteredEvents.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
-            </p>
-          )}
+
+          <div className="flex flex-wrap lg:flex-nowrap gap-3 w-full lg:w-auto">
+            {/* Date Filter */}
+            <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border-2 border-gray-100 shadow-sm flex-grow lg:flex-grow-0">
+              <span className="material-symbols-outlined text-gray-400 ml-2 text-xl">calendar_month</span>
+              <select
+                className="bg-transparent border-none text-sm font-bold text-gray-600 focus:ring-0 pr-8 cursor-pointer w-full lg:w-auto"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+              >
+                <option value="all">Todas as Datas</option>
+                <option value="today">Hoje</option>
+                <option value="week">Próximos 7 dias</option>
+                <option value="month">Próximos 30 dias</option>
+              </select>
+            </div>
+
+            {/* Location Filter */}
+            <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border-2 border-gray-100 shadow-sm flex-grow lg:flex-grow-0">
+              <span className="material-symbols-outlined text-gray-400 ml-2 text-xl">location_on</span>
+              <select
+                className="bg-transparent border-none text-sm font-bold text-gray-600 focus:ring-0 pr-8 cursor-pointer w-full lg:w-auto lg:max-w-[200px]"
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+              >
+                <option value="all">Todos os Locais</option>
+                {locations.map(loc => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Clear Filters */}
+            {(searchTerm || dateFilter !== 'all' || locationFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setDateFilter('all');
+                  setLocationFilter('all');
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-primary hover:bg-primary-light rounded-xl transition-all whitespace-nowrap"
+              >
+                <span className="material-symbols-outlined text-lg">filter_alt_off</span>
+                Limpar
+              </button>
+            )}
+          </div>
         </div>
+
+        {(searchTerm || dateFilter !== 'all' || locationFilter !== 'all') && (
+          <p className="text-xs text-gray-500 font-medium pl-1 mb-6">
+            {filteredEvents.length} {filteredEvents.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
+          </p>
+        )}
 
         {filteredEvents.length === 0 ? (
           <div className="bg-white p-12 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
-            <span className="material-symbols-outlined text-gray-300 text-6xl mb-4">{searchTerm ? 'search_off' : 'calendar_today'}</span>
+            <span className="material-symbols-outlined text-gray-300 text-6xl mb-4">
+              {(searchTerm || dateFilter !== 'all' || locationFilter !== 'all') ? 'search_off' : 'calendar_today'}
+            </span>
             <p className="text-gray-500 font-medium">
-              {searchTerm
-                ? `Nenhum evento encontrado para "${searchTerm}"`
+              {(searchTerm || dateFilter !== 'all' || locationFilter !== 'all')
+                ? 'Nenhum evento corresponde aos filtros selecionados.'
                 : 'Não há eventos disponíveis para inscrição no momento.'}
             </p>
-            {searchTerm && (
+            {(searchTerm || dateFilter !== 'all' || locationFilter !== 'all') && (
               <button
-                onClick={() => setSearchTerm('')}
+                onClick={() => {
+                  setSearchTerm('');
+                  setDateFilter('all');
+                  setLocationFilter('all');
+                }}
                 className="mt-4 text-primary font-bold hover:underline"
               >
-                Limpar pesquisa
+                Limpar todos os filtros
               </button>
             )}
           </div>
         ) : (
-          <div className="grid gap-6">
-            {filteredEvents.map(evento => (
-              <div
-                key={evento.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col md:flex-row"
-              >
-                {/* Event Image */}
-                <div className="w-full md:w-48 lg:w-64 h-48 md:h-auto shrink-0 relative overflow-hidden bg-gray-100">
-                  <img
-                    src={evento.imagem || 'https://placehold.co/600x400/004a99/ffffff?text=UNINASSAU+EVENTOS'}
-                    alt={evento.nome}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/004a99/ffffff?text=UNINASSAU+EVENTOS';
-                    }}
-                  />
-                  {!evento.imagem && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                      <span className="material-symbols-outlined text-6xl">event</span>
-                    </div>
-                  )}
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {filteredEvents.map(evento => {
+              const eventDate = new Date(evento.data);
+              const day = eventDate.getDate();
+              const month = eventDate.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase();
 
-                <div className="flex-grow p-5 md:p-8">
-                  <div className="mb-3">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700 uppercase tracking-wider">
-                      Inscrições Abertas
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-3">
-                    {evento.nome}
-                  </h3>
-
-                  <p className="text-gray-600 text-sm leading-relaxed mb-6 max-w-2xl">
-                    {evento.descricao}
-                  </p>
-
-                  <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm text-gray-500">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-xl font-icon">calendar_month</span>
-                      <span className="font-semibold">{new Date(evento.data).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-xl font-icon">schedule</span>
-                      <span className="font-semibold">{evento.horario}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-xl font-icon">location_on</span>
-                      <span className="font-semibold">{evento.local}</span>
+              return (
+                <div
+                  key={evento.id}
+                  className="event-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"
+                >
+                  {/* Event Image with Date Badge */}
+                  <div className="relative w-full h-48 bg-gray-100 overflow-hidden">
+                    <img
+                      src={evento.imagem || 'https://placehold.co/600x400/004a99/ffffff?text=UNINASSAU+EVENTOS'}
+                      alt={evento.nome}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/004a99/ffffff?text=UNINASSAU+EVENTOS';
+                      }}
+                    />
+                    {!evento.imagem && (
+                      <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                        <span className="material-symbols-outlined text-6xl">event</span>
+                      </div>
+                    )}
+                    {/* Date Badge */}
+                    <div className="date-badge">
+                      <span className="date-badge-day">{day}</span>
+                      <span className="date-badge-month">{month}</span>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-center p-8 border-t md:border-t-0 md:border-l border-gray-100 min-w-[200px]">
-                  <Link
-                    to={`/evento/${evento.id}`}
-                    className="w-full md:w-auto bg-primary text-white px-10 py-3.5 rounded-xl font-black text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all text-center"
-                  >
-                    Participar
-                  </Link>
+                  {/* Card Content */}
+                  <div className="flex-grow p-6">
+                    <h3 className="text-xl font-black text-gray-900 mb-4 line-clamp-2">
+                      {evento.nome}
+                    </h3>
+
+                    <div className="space-y-3 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-xl">schedule</span>
+                        <span className="font-semibold">{evento.horario}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-xl">location_on</span>
+                        <span className="font-semibold">{evento.local}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="p-6 pt-0">
+                    <Link
+                      to={`/evento/${evento.id}`}
+                      className="block w-full bg-primary text-white px-6 py-3.5 rounded-xl font-black text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all text-center"
+                    >
+                      Inscreva-se
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

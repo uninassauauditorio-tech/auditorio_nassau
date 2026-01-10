@@ -271,7 +271,7 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
   }
 
   return (
-    <div className="bg-institutional min-h-[calc(100vh-64px)] py-8 px-4">
+    <div className="min-h-[calc(100vh-80px)] py-8 px-4">
       <div className="max-w-6xl mx-auto animate-in">
         <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-primary transition-colors mb-10 text-sm font-black uppercase tracking-tighter no-print">
           <span className="material-symbols-outlined font-bold">arrow_back</span>
