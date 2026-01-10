@@ -165,9 +165,13 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
     doc.setTextColor('#ffffff');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.text('UNINASSAU', 74, 22, { align: 'center' });
+    doc.text('UNINASSAU', 74, 20, { align: 'center' });
     doc.setFontSize(10);
-    doc.text('COMPROVANTE DE INSCRIÇÃO', 74, 30, { align: 'center' });
+    doc.text('COMPROVANTE DE INSCRIÇÃO', 74, 26, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(evento.nome.toUpperCase(), 74, 33, { align: 'center' });
 
     doc.setTextColor(secondaryColor);
     let y = 50;
@@ -215,7 +219,8 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
           <div className="size-24 bg-green-50 text-green-500 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
             <span className="material-symbols-outlined text-5xl font-black">check_circle</span>
           </div>
-          <h2 className="text-4xl font-black text-gray-900 mb-4 tracking-tight">Presença Confirmada!</h2>
+          <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Presença Confirmada!</h2>
+          <p className="text-primary font-black text-xl mb-4 tracking-tight uppercase">{evento.nome}</p>
           <p className="text-gray-500 mb-10 text-lg">Sua participação foi registrada com sucesso no sistema institucional.</p>
           <div className="bg-gray-50 p-6 rounded-3xl text-left border border-gray-100 mb-10 space-y-4">
             <div>
