@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
 import { useLocation } from 'react-router-dom';
 import { Inscrito } from '../../types';
 
@@ -11,20 +11,35 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
     const [scanResult, setScanResult] = useState<{ success: boolean; message: string; inscrito?: Inscrito } | null>(null);
     const [isScanning, setIsScanning] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
-    const [cameraError, setCameraError] = useState<string | null>(null);
-    const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+    const [isSecure, setIsSecure] = useState(true);
+    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
     const location = useLocation();
 
     useEffect(() => {
-        // Inicializar scanner direto
-        const html5QrCode = new Html5Qrcode("reader", {
-            formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-            verbose: false
-        });
-        html5QrCodeRef.current = html5QrCode;
+        // Verificar se o ambiente é seguro (HTTPS ou localhost)
+        // A câmera só funciona em ambientes seguros
+        if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+            setIsSecure(false);
+            return;
+        }
 
-        // Iniciar câmera automaticamente
-        startCamera();
+        // Inicializar scanner com configuração para forçar câmera
+        const scanner = new Html5QrcodeScanner(
+            "reader",
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0,
+                // Forçar apenas câmera e esconder opção de arquivo
+                supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+                rememberLastUsedCamera: true,
+                showTorchButtonIfSupported: true
+            },
+      /* verbose= */ false
+        );
+
+        scanner.render(onScanSuccess, onScanFailure);
+        scannerRef.current = scanner;
 
         // Verificar se há token na URL (para testes ou links diretos)
         const params = new URLSearchParams(location.search);
@@ -34,41 +49,13 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
         }
 
         return () => {
-            stopCamera();
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(error => {
+                    console.error("Failed to clear html5QrcodeScanner. ", error);
+                });
+            }
         };
     }, []);
-
-    const startCamera = async () => {
-        if (!html5QrCodeRef.current) return;
-
-        try {
-            setCameraError(null);
-            // Tentar usar a câmera traseira por padrão
-            await html5QrCodeRef.current.start(
-                { facingMode: "environment" },
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0
-                },
-                onScanSuccess,
-                onScanFailure
-            );
-        } catch (err: any) {
-            console.error("Erro ao iniciar câmera:", err);
-            setCameraError("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
-        }
-    };
-
-    const stopCamera = async () => {
-        if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-            try {
-                await html5QrCodeRef.current.stop();
-            } catch (err) {
-                console.error("Erro ao parar câmera:", err);
-            }
-        }
-    };
 
     async function onScanSuccess(decodedText: string) {
         // O decodedText deve ser a URL completa ou apenas o token
@@ -90,8 +77,14 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
         setIsScanning(false);
         setIsLoading(true);
 
-        // Parar a câmera durante a validação para economizar recursos e focar no resultado
-        await stopCamera();
+        // Limpar o scanner durante a validação
+        if (scannerRef.current) {
+            try {
+                await scannerRef.current.clear();
+            } catch (e) {
+                console.error("Erro ao limpar scanner:", e);
+            }
+        }
 
         try {
             const result = await validateCheckin(token);
@@ -112,10 +105,9 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
         }
     };
 
-    const resetScanner = async () => {
-        setScanResult(null);
-        setIsScanning(true);
-        await startCamera();
+    const resetScanner = () => {
+        // Recarregar a página é a forma mais limpa de reiniciar o scanner da biblioteca
+        window.location.reload();
     };
 
     return (
@@ -127,29 +119,20 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
                 </div>
 
                 <div className="p-8">
-                    {isScanning ? (
+                    {!isSecure ? (
+                        <div className="bg-amber-50 p-6 rounded-3xl text-center border border-amber-100 space-y-4">
+                            <span className="material-symbols-outlined text-amber-500 text-5xl">lock_open</span>
+                            <h2 className="text-amber-800 font-black text-lg">Ambiente Não Seguro</h2>
+                            <p className="text-amber-700 text-sm leading-relaxed">
+                                A câmera só pode ser acessada através de uma conexão segura (**HTTPS**).
+                                Por favor, verifique o endereço do site.
+                            </p>
+                        </div>
+                    ) : isScanning ? (
                         <div className="space-y-6">
-                            {cameraError ? (
-                                <div className="bg-red-50 p-6 rounded-3xl text-center border border-red-100">
-                                    <span className="material-symbols-outlined text-red-500 text-4xl mb-2">videocam_off</span>
-                                    <p className="text-red-600 font-bold text-sm">{cameraError}</p>
-                                    <button
-                                        onClick={startCamera}
-                                        className="mt-4 text-primary font-black text-xs uppercase tracking-widest hover:underline"
-                                    >
-                                        Tentar Novamente
-                                    </button>
-                                </div>
-                            ) : (
-                                <div id="reader" className="overflow-hidden rounded-3xl border-4 border-gray-100 bg-black aspect-square flex items-center justify-center">
-                                    <div className="text-white/20 flex flex-col items-center gap-2">
-                                        <div className="size-12 border-4 border-white/20 border-t-white/80 rounded-full animate-spin"></div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest">Iniciando Câmera...</p>
-                                    </div>
-                                </div>
-                            )}
+                            <div id="reader" className="overflow-hidden rounded-3xl border-4 border-gray-100 bg-gray-50"></div>
                             <div className="text-center">
-                                <p className="text-gray-400 font-black text-xs uppercase tracking-widest">Aponte a câmera para o QR Code</p>
+                                <p className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Aponte a câmera para o QR Code</p>
                             </div>
                         </div>
                     ) : (
