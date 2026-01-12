@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import { useLocation } from 'react-router-dom';
 import { Inscrito } from '../../types';
 
@@ -12,53 +12,51 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
     const [isScanning, setIsScanning] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [isSecure, setIsSecure] = useState(true);
-    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+    const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
     const location = useLocation();
 
     useEffect(() => {
         // Verificar se o ambiente é seguro (HTTPS ou localhost)
-        // A câmera só funciona em ambientes seguros
         if (!window.isSecureContext && window.location.hostname !== 'localhost') {
             setIsSecure(false);
             return;
         }
 
-        // Inicializar scanner com configuração para forçar câmera
-        const scanner = new Html5QrcodeScanner(
-            "reader",
-            {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0,
-                // Forçar apenas câmera e esconder opção de arquivo
-                supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
-                rememberLastUsedCamera: true,
-                showTorchButtonIfSupported: true
-            },
-      /* verbose= */ false
-        );
+        const html5QrCode = new Html5Qrcode("reader");
+        html5QrCodeRef.current = html5QrCode;
 
-        scanner.render(onScanSuccess, onScanFailure);
-        scannerRef.current = scanner;
-
-        // Verificar se há token na URL (para testes ou links diretos)
-        const params = new URLSearchParams(location.search);
-        const token = params.get('token');
-        if (token) {
-            handleValidate(token);
-        }
+        startScanner();
 
         return () => {
-            if (scannerRef.current) {
-                scannerRef.current.clear().catch(error => {
-                    console.error("Failed to clear html5QrcodeScanner. ", error);
-                });
+            if (html5QrCodeRef.current?.isScanning) {
+                html5QrCodeRef.current.stop().catch(console.error);
             }
         };
     }, []);
 
+    const startScanner = async () => {
+        if (!html5QrCodeRef.current) return;
+
+        try {
+            setCameraError(null);
+            await html5QrCodeRef.current.start(
+                { facingMode: "environment" }, // Forçar câmera traseira
+                {
+                    fps: 10,
+                    qrbox: { width: 280, height: 280 },
+                    aspectRatio: 1.0
+                },
+                onScanSuccess,
+                onScanFailure
+            );
+        } catch (err: any) {
+            console.error("Erro ao iniciar câmera:", err);
+            setCameraError("Não foi possível acessar a câmera traseira.");
+        }
+    };
+
     async function onScanSuccess(decodedText: string) {
-        // O decodedText deve ser a URL completa ou apenas o token
         let token = decodedText;
         if (decodedText.includes('token=')) {
             token = decodedText.split('token=')[1].split('&')[0];
@@ -69,21 +67,17 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
         }
     }
 
-    function onScanFailure(error: any) {
-        // Silencioso para erros de leitura comuns
+    function onScanFailure() {
+        // Silencioso
     }
 
     const handleValidate = async (token: string) => {
         setIsScanning(false);
         setIsLoading(true);
 
-        // Limpar o scanner durante a validação
-        if (scannerRef.current) {
-            try {
-                await scannerRef.current.clear();
-            } catch (e) {
-                console.error("Erro ao limpar scanner:", e);
-            }
+        // Parar a câmera para focar no resultado
+        if (html5QrCodeRef.current?.isScanning) {
+            await html5QrCodeRef.current.stop().catch(console.error);
         }
 
         try {
@@ -91,151 +85,139 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
             setScanResult(result);
 
             // Som de feedback
-            if (result.success) {
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                audio.play().catch(() => { });
-            } else {
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2873/2873-preview.mp3');
-                audio.play().catch(() => { });
-            }
+            const audioUrl = result.success
+                ? 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'
+                : 'https://assets.mixkit.co/active_storage/sfx/2873/2873-preview.mp3';
+            new Audio(audioUrl).play().catch(() => { });
+
+            // Reset automático após 3 segundos
+            setTimeout(() => {
+                resetScanner();
+            }, 3000);
+
         } catch (error) {
             setScanResult({ success: false, message: 'Erro ao validar token.' });
+            setTimeout(() => resetScanner(), 3000);
         } finally {
             setIsLoading(false);
         }
     };
 
     const resetScanner = () => {
-        // Recarregar a página é a forma mais limpa de reiniciar o scanner da biblioteca
-        window.location.reload();
+        setScanResult(null);
+        setIsScanning(true);
+        startScanner();
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-            <style>
-                {`
-                    #reader video {
-                        width: 100% !important;
-                        height: auto !important;
-                        border-radius: 1.5rem !important;
-                        object-fit: cover !important;
-                        min-height: 250px;
-                        background: #000;
-                    }
-                    #reader__dashboard_section_csr button {
-                        background-color: #004a99 !important;
-                        color: white !important;
-                        border: none !important;
-                        padding: 10px 20px !important;
-                        border-radius: 12px !important;
-                        font-weight: bold !important;
-                        cursor: pointer !important;
-                        margin: 10px 0 !important;
-                        text-transform: uppercase !important;
-                        font-size: 12px !important;
-                    }
-                    #reader__status_span {
-                        font-size: 12px !important;
-                        font-weight: bold !important;
-                        color: #666 !important;
-                    }
-                    #reader {
-                        border: none !important;
-                    }
-                `}
-            </style>
-            <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100">
-                <div className="bg-primary p-8 text-center">
-                    <h1 className="text-white text-2xl font-black tracking-tight">CHECK-IN</h1>
-                    <p className="text-white/70 text-sm font-bold uppercase tracking-widest mt-1">Validação de Presença</p>
+        <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-0 md:p-4">
+            <div className="max-w-md w-full h-screen md:h-auto bg-white md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col">
+
+                {/* Header Minimalista */}
+                <div className="bg-primary p-6 text-center shrink-0">
+                    <h1 className="text-white text-xl font-black tracking-tight">CHECK-IN</h1>
+                    <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Validação de Presença</p>
                 </div>
 
-                <div className="p-8">
+                <div className="flex-1 flex flex-col relative bg-gray-50">
                     {!isSecure ? (
-                        <div className="bg-amber-50 p-6 rounded-3xl text-center border border-amber-100 space-y-4">
-                            <span className="material-symbols-outlined text-amber-500 text-5xl">lock_open</span>
-                            <h2 className="text-amber-800 font-black text-lg">Ambiente Não Seguro</h2>
-                            <p className="text-amber-700 text-sm leading-relaxed">
-                                A câmera só pode ser acessada através de uma conexão segura (**HTTPS**).
-                                Por favor, verifique o endereço do site.
-                            </p>
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
+                            <span className="material-symbols-outlined text-amber-500 text-6xl">lock_open</span>
+                            <h2 className="text-gray-800 font-black text-xl">Ambiente Não Seguro</h2>
+                            <p className="text-gray-500 text-sm">A câmera exige uma conexão **HTTPS**.</p>
                         </div>
                     ) : isScanning ? (
-                        <div className="space-y-6">
-                            <div className="relative">
-                                <div id="reader" className="overflow-hidden rounded-3xl border-4 border-gray-100 bg-gray-900 min-h-[250px] flex items-center justify-center">
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 pointer-events-none">
-                                        <span className="material-symbols-outlined text-5xl mb-2">videocam</span>
-                                        <p className="text-[10px] font-black uppercase tracking-widest">Aguardando Câmera...</p>
+                        <div className="flex-1 flex flex-col relative">
+                            {/* Container da Câmera - Ocupa o máximo de espaço */}
+                            <div id="reader" className="flex-1 bg-black overflow-hidden relative">
+                                {cameraError && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-gray-900 z-10">
+                                        <span className="material-symbols-outlined text-red-500 text-5xl mb-4">videocam_off</span>
+                                        <p className="text-white font-bold mb-6">{cameraError}</p>
+                                        <button
+                                            onClick={startScanner}
+                                            className="bg-primary text-white px-8 py-3 rounded-xl font-black text-sm uppercase"
+                                        >
+                                            Tentar Novamente
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Overlay de Scan */}
+                                <div className="absolute inset-0 border-[40px] border-black/40 pointer-events-none z-0 flex items-center justify-center">
+                                    <div className="size-64 border-2 border-primary/50 rounded-3xl relative">
+                                        <div className="absolute inset-0 bg-primary/5 animate-pulse rounded-3xl"></div>
+                                        {/* Cantos destacados */}
+                                        <div className="absolute -top-1 -left-1 size-8 border-t-4 border-l-4 border-primary rounded-tl-xl"></div>
+                                        <div className="absolute -top-1 -right-1 size-8 border-t-4 border-r-4 border-primary rounded-tr-xl"></div>
+                                        <div className="absolute -bottom-1 -left-1 size-8 border-b-4 border-l-4 border-primary rounded-bl-xl"></div>
+                                        <div className="absolute -bottom-1 -right-1 size-8 border-b-4 border-r-4 border-primary rounded-br-xl"></div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="text-center">
-                                <p className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Aponte a câmera para o QR Code</p>
+
+                            {/* Instrução Inferior */}
+                            <div className="p-6 bg-white border-t border-gray-100 text-center">
+                                <p className="text-gray-400 font-black text-[10px] uppercase tracking-widest animate-bounce">
+                                    Aponte para o QR Code
+                                </p>
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center space-y-8 animate-in">
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-8 animate-in">
                             {isLoading ? (
-                                <div className="py-12">
-                                    <div className="size-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                                    <p className="text-gray-500 font-bold">Validando...</p>
+                                <div className="space-y-4">
+                                    <div className="size-20 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                    <p className="text-gray-500 font-black uppercase text-xs tracking-widest">Validando...</p>
                                 </div>
                             ) : (
                                 <>
-                                    <div className={`size-32 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-lg ${scanResult?.success ? 'bg-green-50 text-green-500 shadow-green-200/50' : 'bg-red-50 text-red-500 shadow-red-200/50'
+                                    <div className={`size-32 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl ${scanResult?.success ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                                         }`}>
-                                        <span className="material-symbols-outlined text-6xl font-black">
+                                        <span className="material-symbols-outlined text-7xl font-black">
                                             {scanResult?.success ? 'check_circle' : 'error'}
                                         </span>
                                     </div>
 
                                     <div>
-                                        <h2 className={`text-3xl font-black mb-2 ${scanResult?.success ? 'text-green-600' : 'text-red-600'
-                                            }`}>
-                                            {scanResult?.success ? 'Entrada Confirmada!' : 'Falha na Validação'}
+                                        <h2 className={`text-3xl font-black mb-2 ${scanResult?.success ? 'text-green-600' : 'text-red-600'}`}>
+                                            {scanResult?.success ? 'CONFIRMADO!' : 'ERRO!'}
                                         </h2>
-                                        <p className="text-gray-500 font-medium text-lg">{scanResult?.message}</p>
+                                        <p className="text-gray-500 font-bold text-lg">{scanResult?.message}</p>
                                     </div>
 
                                     {scanResult?.inscrito && (
-                                        <div className="bg-gray-50 p-6 rounded-3xl text-left border border-gray-100 space-y-3">
+                                        <div className="w-full bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-left space-y-4">
                                             <div>
                                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Participante</p>
-                                                <p className="text-lg font-bold text-gray-800">{scanResult.inscrito.nomeCompleto.toUpperCase()}</p>
+                                                <p className="text-xl font-black text-gray-900">{scanResult.inscrito.nomeCompleto.toUpperCase()}</p>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="flex justify-between items-end">
                                                 <div>
                                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">CPF</p>
                                                     <p className="text-sm font-bold text-gray-700">{scanResult.inscrito.cpf}</p>
                                                 </div>
-                                                <div>
-                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</p>
-                                                    <p className={`text-sm font-bold ${scanResult.success ? 'text-green-600' : 'text-red-600'}`}>
-                                                        {scanResult.success ? 'PRESENTE' : 'NÃO VALIDADO'}
-                                                    </p>
+                                                <div className="text-right">
+                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${scanResult.success ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                                        }`}>
+                                                        {scanResult.success ? 'PRESENTE' : 'FALHA'}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
                                     )}
 
-                                    <button
-                                        onClick={resetScanner}
-                                        className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3"
-                                    >
-                                        <span className="material-symbols-outlined font-black">qr_code_scanner</span>
-                                        NOVO SCAN
-                                    </button>
+                                    <div className="pt-4">
+                                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">
+                                            Reiniciando em 3 segundos...
+                                        </p>
+                                    </div>
                                 </>
                             )}
                         </div>
                     )}
                 </div>
             </div>
-
-            <p className="mt-8 text-gray-400 text-xs font-bold uppercase tracking-widest">
-                Sistema Institucional de Eventos • UNINASSAU
-            </p>
         </div>
     );
 };
