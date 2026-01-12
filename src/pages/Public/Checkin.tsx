@@ -112,6 +112,38 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+            <style>
+                {`
+                    #reader video {
+                        width: 100% !important;
+                        height: auto !important;
+                        border-radius: 1.5rem !important;
+                        object-fit: cover !important;
+                        min-height: 250px;
+                        background: #000;
+                    }
+                    #reader__dashboard_section_csr button {
+                        background-color: #004a99 !important;
+                        color: white !important;
+                        border: none !important;
+                        padding: 10px 20px !important;
+                        border-radius: 12px !important;
+                        font-weight: bold !important;
+                        cursor: pointer !important;
+                        margin: 10px 0 !important;
+                        text-transform: uppercase !important;
+                        font-size: 12px !important;
+                    }
+                    #reader__status_span {
+                        font-size: 12px !important;
+                        font-weight: bold !important;
+                        color: #666 !important;
+                    }
+                    #reader {
+                        border: none !important;
+                    }
+                `}
+            </style>
             <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100">
                 <div className="bg-primary p-8 text-center">
                     <h1 className="text-white text-2xl font-black tracking-tight">CHECK-IN</h1>
@@ -130,7 +162,14 @@ const CheckinPage: React.FC<CheckinPageProps> = ({ validateCheckin }) => {
                         </div>
                     ) : isScanning ? (
                         <div className="space-y-6">
-                            <div id="reader" className="overflow-hidden rounded-3xl border-4 border-gray-100 bg-gray-50"></div>
+                            <div className="relative">
+                                <div id="reader" className="overflow-hidden rounded-3xl border-4 border-gray-100 bg-gray-900 min-h-[250px] flex items-center justify-center">
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 pointer-events-none">
+                                        <span className="material-symbols-outlined text-5xl mb-2">videocam</span>
+                                        <p className="text-[10px] font-black uppercase tracking-widest">Aguardando Câmera...</p>
+                                    </div>
+                                </div>
+                            </div>
                             <div className="text-center">
                                 <p className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Aponte a câmera para o QR Code</p>
                             </div>
