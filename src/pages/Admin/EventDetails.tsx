@@ -38,7 +38,7 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
   };
 
   const handleExport = () => {
-    const headers = ["Nome Completo", "CPF", "Telefone", "E-mail", "Escolaridade", "Interesse/Tipo", "Curso Interesse", "Data/Hora Registro"];
+    const headers = ["Nome Completo", "CPF", "Telefone", "E-mail", "Escolaridade", "Interesse/Tipo", "Curso Interesse", "Data/Hora Registro", "Presença", "Data/Hora Check-in"];
     const rows = evento.inscritos.map(i => [
       i.nomeCompleto,
       i.cpf,
@@ -47,7 +47,9 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
       i.escolaridade,
       i.interesseGraduacao || i.interesseTipo || 'N/A',
       i.cursoInteresse || 'N/A',
-      new Date(i.dataInscricao).toLocaleString('pt-BR')
+      new Date(i.dataInscricao).toLocaleString('pt-BR'),
+      i.checkedIn ? 'SIM' : 'NÃO',
+      i.checkinDate ? new Date(i.checkinDate).toLocaleString('pt-BR') : 'N/A'
     ]);
 
     exportToXLSX(rows, headers, `LISTA_AUDITORIO_${evento.nome.toUpperCase().replace(/\s/g, '_')}`);
@@ -99,6 +101,33 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
           <p className="text-[9px] text-gray-400">
             {new Date(item.dataInscricao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </p>
+        </div>
+      ),
+      className: 'text-center',
+      sortable: true
+    },
+    {
+      header: 'Presença',
+      accessor: (item) => (
+        <div className="text-center min-w-[100px]">
+          {item.checkedIn ? (
+            <div className="flex flex-col items-center">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-green-100 text-green-600 border border-green-200">
+                <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                PRESENTE
+              </span>
+              {item.checkinDate && (
+                <p className="text-[8px] text-gray-400 font-bold mt-1">
+                  {new Date(item.checkinDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
+            </div>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-400 border border-gray-200">
+              <span className="material-symbols-outlined text-[12px]">schedule</span>
+              PENDENTE
+            </span>
+          )}
         </div>
       ),
       className: 'text-center',
@@ -196,7 +225,13 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
           <div className="bg-primary p-6 md:p-8 rounded-[2rem] shadow-xl shadow-primary/20 text-white relative overflow-hidden group">
             <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-white/10 text-7xl md:text-9xl group-hover:scale-110 transition-transform">group</span>
             <p className="text-[10px] font-black uppercase tracking-widest text-primary-light/70 mb-1">Presenças Confirmadas</p>
-            <p className="text-4xl md:text-6xl font-black">{evento.inscritos.length}</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-4xl md:text-6xl font-black">{evento.inscritos.filter(i => i.checkedIn).length}</p>
+              <p className="text-lg md:text-xl font-bold text-primary-light/60">/ {evento.inscritos.length}</p>
+            </div>
+            <p className="text-[9px] font-bold text-primary-light/50 mt-2 uppercase tracking-tighter">
+              {((evento.inscritos.filter(i => i.checkedIn).length / (evento.inscritos.length || 1)) * 100).toFixed(0)}% de comparecimento
+            </p>
           </div>
         </div>
 

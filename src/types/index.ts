@@ -22,6 +22,9 @@ export interface Inscrito {
   interesseTipo?: string; // Nova Graduação / Pós / Não
   cursoInteresse?: string;
   dataInscricao: string;
+  qrToken?: string;
+  checkedIn?: boolean;
+  checkinDate?: string;
 }
 
 export enum Escolaridade {

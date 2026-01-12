@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Evento } from '../../types';
+import logo from '../../assets/img/logo.png';
 
 interface PublicEventListProps {
   eventos: Evento[];
@@ -194,20 +195,16 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
                   className="event-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"
                 >
                   {/* Event Image with Date Badge */}
-                  <div className="relative w-full h-48 bg-gray-100 overflow-hidden">
+                  <div className="relative w-full h-48 bg-primary/5 overflow-hidden flex items-center justify-center p-8">
                     <img
-                      src={evento.imagem || 'https://placehold.co/600x400/004a99/ffffff?text=UNINASSAU+EVENTOS'}
+                      src={evento.imagem || logo}
                       alt={evento.nome}
-                      className="w-full h-full object-cover"
+                      className={evento.imagem ? "w-full h-full object-cover" : "max-w-full max-h-full object-contain opacity-90"}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/004a99/ffffff?text=UNINASSAU+EVENTOS';
+                        (e.target as HTMLImageElement).src = logo;
+                        (e.target as HTMLImageElement).className = "max-w-full max-h-full object-contain opacity-90";
                       }}
                     />
-                    {!evento.imagem && (
-                      <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                        <span className="material-symbols-outlined text-6xl">event</span>
-                      </div>
-                    )}
                     {/* Date Badge */}
                     <div className="date-badge">
                       <span className="date-badge-day">{day}</span>

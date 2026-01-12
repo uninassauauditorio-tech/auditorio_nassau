@@ -106,8 +106,13 @@ export const useStore = () => {
   };
 
   const registrarInscrito = async (eventoId: string, inscrito: Omit<Inscrito, 'id' | 'dataInscricao'>) => {
-    await eventService.registerSubscriber(eventoId, inscrito);
+    const result = await eventService.registerSubscriber(eventoId, inscrito);
     await loadEvents();
+    return result;
+  };
+
+  const validateCheckin = async (token: string) => {
+    return await eventService.validateCheckin(token);
   };
 
   const uploadImage = async (file: File) => {
@@ -125,6 +130,7 @@ export const useStore = () => {
     encerrarEvento,
     deleteEvento,
     registrarInscrito,
+    validateCheckin,
     uploadImage
   };
 };

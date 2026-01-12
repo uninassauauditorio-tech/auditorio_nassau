@@ -83,6 +83,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
             Ver Arquivo
           </Link>
           <Link
+            to="/checkin"
+            className="bg-amber-50 border-2 border-amber-100 text-amber-700 px-6 py-3.5 md:py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-amber-100 transition-all text-sm md:text-base"
+          >
+            <span className="material-symbols-outlined font-bold">qr_code_scanner</span>
+            Modo Check-in
+          </Link>
+          <Link
             to="/admin/novo"
             className="bg-primary text-white px-8 py-3.5 md:py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary-dark hover:-translate-y-0.5 transition-all active:scale-95 text-sm md:text-base"
           >

@@ -11,6 +11,7 @@ import AdminEventForm from './pages/Admin/EventForm';
 import AdminEventDetails from './pages/Admin/EventDetails';
 import PublicEventList from './pages/Public/EventList';
 import PublicEventRegistration from './pages/Public/EventRegistration';
+import CheckinPage from './pages/Public/Checkin';
 
 const App: React.FC = () => {
   const store = useStore();
@@ -38,6 +39,10 @@ const App: React.FC = () => {
             <Route
               path="/evento/:id"
               element={<PublicEventRegistration eventos={store.eventos} onRegister={store.registrarInscrito} />}
+            />
+            <Route
+              path="/checkin"
+              element={<CheckinPage validateCheckin={store.validateCheckin} />}
             />
 
             {/* Admin Routes */}

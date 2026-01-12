@@ -37,6 +37,15 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, onLogout }) => {
               >
                 Painel
               </Link>
+              <Link
+                to="/checkin"
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${location.pathname === '/checkin'
+                  ? 'bg-primary-light text-primary'
+                  : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+              >
+                Check-in
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1 text-gray-500 hover:text-red-600 px-4 py-2 rounded-lg text-sm font-bold transition-all"

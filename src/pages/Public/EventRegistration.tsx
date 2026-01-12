@@ -6,10 +6,12 @@ import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { RadioGroup } from '../../components/ui/RadioGroup';
 import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
+import logo from '../../assets/img/logo.png';
 
 interface PublicEventRegistrationProps {
   eventos: Evento[];
-  onRegister: (eventoId: string, inscrito: Omit<Inscrito, 'id' | 'dataInscricao'>) => void;
+  onRegister: (eventoId: string, inscrito: Omit<Inscrito, 'id' | 'dataInscricao'>) => Promise<Inscrito>;
 }
 
 const COURSES = [
@@ -47,6 +49,8 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
+  const [registeredInscrito, setRegisteredInscrito] = useState<Inscrito | null>(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
   // Helper Functions para Máscaras
   const maskCPF = (value: string) => {
@@ -138,11 +142,32 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      onRegister(evento.id, payload);
-      setIsSuccess(true);
-      setIsSubmitting(false);
-    }, 800);
+    onRegister(evento.id, payload)
+      .then(async (result) => {
+        setRegisteredInscrito(result);
+        if (result.qrToken) {
+          // Gerar QR Code em Base64
+          // Formato: https://seusite.com/checkin/confirm?token=TOKEN
+          const baseUrl = window.location.origin + window.location.pathname;
+          const checkinUrl = `${baseUrl}#/checkin?token=${result.qrToken}`;
+          const qrDataUrl = await QRCode.toDataURL(checkinUrl, {
+            margin: 2,
+            width: 200,
+            color: {
+              dark: '#004a99',
+              light: '#ffffff'
+            }
+          });
+          setQrCodeDataUrl(qrDataUrl);
+        }
+        setIsSuccess(true);
+        setIsSubmitting(false);
+      })
+      .catch(err => {
+        console.error('Erro ao registrar:', err);
+        setIsSubmitting(false);
+        alert('Erro ao realizar inscrição. Tente novamente.');
+      });
   };
 
   const handleDownload = () => {
@@ -186,7 +211,7 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
       doc.setFontSize(12);
       doc.setTextColor(secondaryColor);
       doc.text(value, 20, y);
-      y += 12;
+      y += 10;
     };
 
     addField('Participante', formData.nomeCompleto.toUpperCase());
@@ -195,17 +220,28 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
     addField('Data do Evento', `${new Date(evento.data).toLocaleDateString('pt-BR')} às ${evento.horario}`);
     addField('Local', evento.local);
 
+    // Adicionar QR Code se existir
+    if (qrCodeDataUrl) {
+      const qrY = y + 5;
+      doc.addImage(qrCodeDataUrl, 'PNG', 54, qrY, 40, 40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(primaryColor);
+      doc.text('APRESENTE ESTE QR CODE NA ENTRADA', 74, qrY + 43, { align: 'center' });
+      y = qrY + 50;
+    }
+
     doc.setFillColor(lightGray);
-    doc.roundedRect(49, 145, 50, 20, 3, 3, 'F');
+    doc.roundedRect(49, y, 50, 15, 3, 3, 'F');
     doc.setFontSize(8);
     doc.setTextColor('#666666');
-    doc.text('VALIDADO PELO SISTEMA', 74, 157, { align: 'center' });
+    doc.text('VALIDADO PELO SISTEMA', 74, y + 9, { align: 'center' });
 
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(8);
     doc.setTextColor('#999999');
-    doc.text('Apresente este comprovante na portaria do auditório.', 74, 185, { align: 'center' });
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 74, 192, { align: 'center' });
+    doc.text('Este comprovante deverá ser apresentado na entrada para validação de presença.', 74, 195, { align: 'center' });
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 74, 202, { align: 'center' });
 
     doc.save(`comprovante-${formData.nomeCompleto.toLowerCase().replace(/\s+/g, '-')}.pdf`);
     setIsDownloaded(true);
@@ -287,18 +323,21 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
           <div className="lg:col-span-7 space-y-6 md:space-y-8">
             <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-gray-100">
               {/* Event Image */}
-              {evento.imagem && (
-                <div className="mb-8 -mx-6 md:-mx-10 -mt-6 md:-mt-10">
-                  <img
-                    src={evento.imagem}
-                    alt={evento.nome}
-                    className="w-full h-64 md:h-80 object-cover rounded-t-[2rem] md:rounded-t-[3rem]"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
+              <div className={`mb-8 -mx-6 md:-mx-10 -mt-6 md:-mt-10 ${!evento.imagem ? 'bg-primary/5 p-12 flex items-center justify-center' : ''}`}>
+                <img
+                  src={evento.imagem || logo}
+                  alt={evento.nome}
+                  className={evento.imagem
+                    ? "w-full h-64 md:h-80 object-cover rounded-t-[2rem] md:rounded-t-[3rem]"
+                    : "max-w-[200px] md:max-w-[300px] object-contain opacity-90"
+                  }
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = logo;
+                    (e.target as HTMLImageElement).className = "max-w-[200px] md:max-w-[300px] object-contain opacity-90";
+                    (e.target as HTMLImageElement).parentElement?.classList.add('bg-primary/5', 'p-12', 'flex', 'items-center', 'justify-center');
+                  }}
+                />
+              </div>
 
               <span className="inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-primary-light text-primary mb-6">
                 Evento Institucional

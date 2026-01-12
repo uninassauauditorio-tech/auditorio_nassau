@@ -32,7 +32,10 @@ export class SupabaseEventService implements EventService {
                     interesseGraduacao: reg.interesse === 'graduacao' ? 'Sim' : 'Não',
                     interesseTipo: reg.interesse,
                     cursoInteresse: reg.curso,
-                    dataInscricao: reg.data_inscricao
+                    dataInscricao: reg.data_inscricao,
+                    qrToken: reg.qr_token,
+                    checkedIn: reg.checked_in,
+                    checkinDate: reg.checkin_date
                 }))
             }));
         } catch (e) {
@@ -72,7 +75,10 @@ export class SupabaseEventService implements EventService {
                     interesseGraduacao: reg.interesse === 'graduacao' ? 'Sim' : 'Não',
                     interesseTipo: reg.interesse,
                     cursoInteresse: reg.curso,
-                    dataInscricao: reg.data_inscricao
+                    dataInscricao: reg.data_inscricao,
+                    qrToken: reg.qr_token,
+                    checkedIn: reg.checked_in,
+                    checkinDate: reg.checkin_date
                 }))
             };
         } catch (e) {
@@ -162,9 +168,12 @@ export class SupabaseEventService implements EventService {
         if (error) throw error;
     }
 
-    async registerSubscriber(eventoId: string, inscritoData: Omit<Inscrito, 'id' | 'dataInscricao'>): Promise<void> {
+    async registerSubscriber(eventoId: string, inscritoData: Omit<Inscrito, 'id' | 'dataInscricao'>): Promise<Inscrito> {
         if (!supabase) throw new Error('Supabase não configurado.');
-        const { error } = await supabase
+
+        const qrToken = crypto.randomUUID();
+
+        const { data, error } = await supabase
             .from('registrations')
             .insert([{
                 event_id: eventoId,
@@ -175,10 +184,96 @@ export class SupabaseEventService implements EventService {
                 escolaridade: inscritoData.escolaridade,
                 interesse: inscritoData.interesseTipo === 'Pós-graduação' ? 'pos' :
                     inscritoData.interesseTipo === 'Segunda Graduação' ? 'segunda_graduacao' : 'graduacao',
-                curso: inscritoData.cursoInteresse
-            }]);
+                curso: inscritoData.cursoInteresse,
+                qr_token: qrToken
+            }])
+            .select()
+            .single();
 
         if (error) throw error;
+
+        return {
+            id: data.id,
+            nomeCompleto: data.nome,
+            telefone: data.telefone,
+            cpf: data.cpf,
+            email: data.email,
+            escolaridade: data.escolaridade,
+            interesseGraduacao: data.interesse === 'graduacao' ? 'Sim' : 'Não',
+            interesseTipo: data.interesse,
+            cursoInteresse: data.curso,
+            dataInscricao: data.data_inscricao,
+            qrToken: data.qr_token,
+            checkedIn: data.checked_in,
+            checkinDate: data.checkin_date
+        };
+    }
+
+    async validateCheckin(token: string): Promise<{ success: boolean; message: string; inscrito?: Inscrito }> {
+        if (!supabase) throw new Error('Supabase não configurado.');
+
+        try {
+            const { data: inscrito, error: fetchError } = await supabase
+                .from('registrations')
+                .select('*, events(nome_evento)')
+                .eq('qr_token', token)
+                .single();
+
+            if (fetchError || !inscrito) {
+                return { success: false, message: 'QR Code inválido ou não encontrado.' };
+            }
+
+            if (inscrito.checked_in) {
+                return {
+                    success: false,
+                    message: 'Este QR Code já foi utilizado para check-in.',
+                    inscrito: {
+                        id: inscrito.id,
+                        nomeCompleto: inscrito.nome,
+                        telefone: inscrito.telefone,
+                        cpf: inscrito.cpf,
+                        email: inscrito.email,
+                        escolaridade: inscrito.escolaridade,
+                        dataInscricao: inscrito.data_inscricao,
+                        qrToken: inscrito.qr_token,
+                        checkedIn: inscrito.checked_in,
+                        checkinDate: inscrito.checkin_date
+                    }
+                };
+            }
+
+            const { data: updated, error: updateError } = await supabase
+                .from('registrations')
+                .update({
+                    checked_in: true,
+                    checkin_date: new Date().toISOString()
+                })
+                .eq('id', inscrito.id)
+                .select()
+                .single();
+
+            if (updateError) throw updateError;
+
+            return {
+                success: true,
+                message: 'Entrada confirmada com sucesso!',
+                inscrito: {
+                    id: updated.id,
+                    nomeCompleto: updated.nome,
+                    telefone: updated.telefone,
+                    cpf: updated.cpf,
+                    email: updated.email,
+                    escolaridade: updated.escolaridade,
+                    dataInscricao: updated.data_inscricao,
+                    qrToken: updated.qr_token,
+                    checkedIn: updated.checked_in,
+                    checkinDate: updated.checkin_date
+                }
+            };
+        } catch (e) {
+            console.error('Erro na validação de check-in:', e);
+            return { success: false, message: 'Erro ao processar check-in. Tente novamente.' };
+        }
     }
 
     async uploadImage(file: File): Promise<string> {
