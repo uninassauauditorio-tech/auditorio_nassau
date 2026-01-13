@@ -112,7 +112,11 @@ export const useStore = () => {
   };
 
   const validateCheckin = async (token: string) => {
-    return await eventService.validateCheckin(token);
+    const result = await eventService.validateCheckin(token);
+    if (result.success) {
+      await loadEvents();
+    }
+    return result;
   };
 
   const uploadImage = async (file: File) => {

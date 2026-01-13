@@ -68,7 +68,7 @@ const App: React.FC = () => {
 
             <Route
               path="/admin/evento/:id"
-              element={store.isAdmin ? <AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} /> : <Navigate to="/admin/login" />}
+              element={store.isAdmin ? <AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onCheckin={store.validateCheckin} /> : <Navigate to="/admin/login" />}
             />
 
             <Route

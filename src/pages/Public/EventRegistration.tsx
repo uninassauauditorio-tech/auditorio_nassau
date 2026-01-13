@@ -8,6 +8,7 @@ import { RadioGroup } from '../../components/ui/RadioGroup';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import logo from '../../assets/img/logo.png';
+import { generateReceipt } from '../../utils/receipt';
 
 interface PublicEventRegistrationProps {
   eventos: Evento[];
@@ -170,81 +171,11 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
       });
   };
 
-  const handleDownload = () => {
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a5'
-    });
-
-    const primaryColor = '#004a99';
-    const secondaryColor = '#333333';
-    const lightGray = '#f3f4f6';
-
-    doc.setDrawColor(primaryColor);
-    doc.setLineWidth(1);
-    doc.roundedRect(10, 10, 128, 190, 5, 5, 'D');
-
-    doc.setFillColor(primaryColor);
-    doc.rect(10, 10, 128, 25, 'F');
-    doc.setTextColor('#ffffff');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    doc.text('UNINASSAU', 74, 20, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text('COMPROVANTE DE INSCRIÇÃO', 74, 26, { align: 'center' });
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(evento.nome.toUpperCase(), 74, 33, { align: 'center' });
-
-    doc.setTextColor(secondaryColor);
-    let y = 50;
-
-    const addField = (label: string, value: string) => {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor('#999999');
-      doc.text(label.toUpperCase(), 20, y);
-      y += 6;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(secondaryColor);
-      doc.text(value, 20, y);
-      y += 10;
-    };
-
-    addField('Participante', formData.nomeCompleto.toUpperCase());
-    addField('CPF', formData.cpf);
-    addField('Evento', evento.nome);
-    addField('Data do Evento', `${new Date(evento.data).toLocaleDateString('pt-BR')} às ${evento.horario}`);
-    addField('Local', evento.local);
-
-    // Adicionar QR Code se existir
-    if (qrCodeDataUrl) {
-      const qrY = y + 5;
-      doc.addImage(qrCodeDataUrl, 'PNG', 54, qrY, 40, 40);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.setTextColor(primaryColor);
-      doc.text('APRESENTE ESTE QR CODE NA ENTRADA', 74, qrY + 43, { align: 'center' });
-      y = qrY + 50;
+  const handleDownload = async () => {
+    if (registeredInscrito) {
+      await generateReceipt(evento, registeredInscrito);
+      setIsDownloaded(true);
     }
-
-    doc.setFillColor(lightGray);
-    doc.roundedRect(49, y, 50, 15, 3, 3, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor('#666666');
-    doc.text('VALIDADO PELO SISTEMA', 74, y + 9, { align: 'center' });
-
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(8);
-    doc.setTextColor('#999999');
-    doc.text('Este comprovante deverá ser apresentado na entrada para validação de presença.', 74, 195, { align: 'center' });
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 74, 202, { align: 'center' });
-
-    doc.save(`comprovante-${formData.nomeCompleto.toLowerCase().replace(/\s+/g, '-')}.pdf`);
-    setIsDownloaded(true);
   };
 
   if (isSuccess) {

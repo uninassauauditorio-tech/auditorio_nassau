@@ -4,14 +4,16 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Evento, Inscrito } from '../../types';
 import { Table, Column } from '../../components/ui/Table';
 import { exportToXLSX } from '../../utils/export';
+import { generateReceipt } from '../../utils/receipt';
 
 interface AdminEventDetailsProps {
   eventos: Evento[];
   onEnd: (id: string) => void;
   onDelete: (id: string) => void;
+  onCheckin: (token: string) => Promise<{ success: boolean; message: string }>;
 }
 
-const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, onDelete }) => {
+const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, onDelete, onCheckin }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const evento = eventos.find(e => e.id === id);
@@ -132,6 +134,44 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
       ),
       className: 'text-center',
       sortable: true
+    },
+    {
+      header: 'Ações',
+      accessor: (item) => (
+        <div className="flex justify-center gap-2 no-print">
+          {!item.checkedIn ? (
+            <button
+              onClick={async () => {
+                if (window.confirm(`Confirmar presença manual para ${item.nomeCompleto.toUpperCase()}?`)) {
+                  const result = await onCheckin(item.qrToken);
+                  if (!result.success) {
+                    alert(result.message);
+                  }
+                }
+              }}
+              className="bg-primary text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-primary-dark transition-all flex items-center gap-1 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[14px]">how_to_reg</span>
+              Confirmar
+            </button>
+          ) : (
+            <span className="text-[9px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1">
+              <span className="material-symbols-outlined text-[14px]">done_all</span>
+              Validado
+            </span>
+          )}
+
+          <button
+            onClick={() => generateReceipt(evento, item)}
+            className="bg-white border border-gray-200 text-gray-500 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-1 shadow-sm"
+            title="Reimprimir Comprovante"
+          >
+            <span className="material-symbols-outlined text-[14px]">print</span>
+            Recibo
+          </button>
+        </div>
+      ),
+      className: 'text-center'
     }
   ];
 
