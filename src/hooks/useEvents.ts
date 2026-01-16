@@ -111,6 +111,11 @@ export const useStore = () => {
     return result;
   };
 
+  const deleteInscrito = async (id: string) => {
+    await eventService.deleteRegistration(id);
+    await loadEvents();
+  };
+
   const validateCheckin = async (token: string) => {
     const result = await eventService.validateCheckin(token);
     if (result.success) {
@@ -134,6 +139,7 @@ export const useStore = () => {
     encerrarEvento,
     deleteEvento,
     registrarInscrito,
+    deleteInscrito,
     validateCheckin,
     uploadImage
   };

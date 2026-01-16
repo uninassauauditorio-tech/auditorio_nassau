@@ -1,38 +1,118 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Evento, Inscrito } from '../../types';
 import { Table, Column } from '../../components/ui/Table';
 import { exportToXLSX } from '../../utils/export';
 import { generateReceipt } from '../../utils/receipt';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import AlertDialog from '../../components/ui/AlertDialog';
 
 interface AdminEventDetailsProps {
   eventos: Evento[];
   onEnd: (id: string) => void;
   onDelete: (id: string) => void;
+  onDeleteRegistration: (id: string) => Promise<void>;
   onCheckin: (token: string) => Promise<{ success: boolean; message: string }>;
 }
 
-const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, onDelete, onCheckin }) => {
+const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, onDelete, onDeleteRegistration, onCheckin }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const evento = eventos.find(e => e.id === id);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'present' | 'pending'>('all');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Modal States
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+    type: 'info'
+  });
+
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const filteredInscritos = useMemo(() => {
+    if (!evento) return [];
+
+    let result = [...evento.inscritos];
+
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(i =>
+        i.nomeCompleto.toLowerCase().includes(term) ||
+        i.cpf.includes(term) ||
+        i.email.toLowerCase().includes(term)
+      );
+    }
+
+    // Status filter
+    if (statusFilter === 'present') {
+      result = result.filter(i => i.checkedIn);
+    } else if (statusFilter === 'pending') {
+      result = result.filter(i => !i.checkedIn);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      const nameA = a.nomeCompleto.toLowerCase();
+      const nameB = b.nomeCompleto.toLowerCase();
+      if (sortOrder === 'asc') {
+        return nameA.localeCompare(nameB);
+      } else {
+        return nameB.localeCompare(nameA);
+      }
+    });
+
+    return result;
+  }, [evento, searchTerm, statusFilter, sortOrder]);
 
   if (!evento) {
     return <div className="text-center py-20 font-bold text-gray-400">Evento institucional não localizado.</div>;
   }
 
   const handleEncerrar = () => {
-    if (window.confirm("CONFIRMAÇÃO: Encerrar o registro de presença? Ninguém mais poderá confirmar participação online.")) {
-      onEnd(evento.id);
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Encerrar Evento',
+      message: 'CONFIRMAÇÃO: Encerrar o registro de presença? Ninguém mais poderá confirmar participação online.',
+      onConfirm: () => onEnd(evento.id),
+      type: 'warning'
+    });
   };
 
   const handleDelete = () => {
-    if (window.confirm(`ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nDeseja realmente excluir o evento "${evento.nome}"?\n\nTodos os registros de participantes também serão excluídos.`)) {
-      onDelete(evento.id);
-      navigate('/admin');
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Excluir Evento',
+      message: `ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nDeseja realmente excluir o evento "${evento.nome}"?\n\nTodos os registros de participantes também serão excluídos.`,
+      onConfirm: () => {
+        onDelete(evento.id);
+        navigate('/admin');
+      },
+      type: 'danger'
+    });
   };
 
   const handlePrint = () => {
@@ -142,12 +222,23 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
           {!item.checkedIn ? (
             <button
               onClick={async () => {
-                if (window.confirm(`Confirmar presença manual para ${item.nomeCompleto.toUpperCase()}?`)) {
-                  const result = await onCheckin(item.qrToken);
-                  if (!result.success) {
-                    alert(result.message);
-                  }
-                }
+                setConfirmConfig({
+                  isOpen: true,
+                  title: 'Confirmar Presença',
+                  message: `Confirmar presença manual para ${item.nomeCompleto.toUpperCase()}?`,
+                  onConfirm: async () => {
+                    const result = await onCheckin(item.qrToken);
+                    if (!result.success) {
+                      setAlertConfig({
+                        isOpen: true,
+                        title: 'Erro no Check-in',
+                        message: result.message,
+                        type: 'error'
+                      });
+                    }
+                  },
+                  type: 'info'
+                });
               }}
               className="bg-primary text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-primary-dark transition-all flex items-center gap-1 shadow-sm"
             >
@@ -163,11 +254,41 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
 
           <button
             onClick={() => generateReceipt(evento, item)}
-            className="bg-white border border-gray-200 text-gray-500 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-1 shadow-sm"
-            title="Reimprimir Comprovante"
+            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1 shadow-sm ${item.checkedIn
+              ? 'bg-green-50 text-green-600 border border-green-200 hover:bg-green-100'
+              : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
+              }`}
+            title={item.checkedIn ? "Gerar Certificado de Presença" : "Reimprimir Comprovante de Inscrição"}
           >
-            <span className="material-symbols-outlined text-[14px]">print</span>
-            Recibo
+            <span className="material-symbols-outlined text-[14px]">{item.checkedIn ? 'verified' : 'print'}</span>
+            {item.checkedIn ? 'Certificado' : 'Recibo'}
+          </button>
+
+          <button
+            onClick={async () => {
+              setConfirmConfig({
+                isOpen: true,
+                title: 'Excluir Participante',
+                message: `ATENÇÃO: Deseja realmente excluir o registro de ${item.nomeCompleto.toUpperCase()}?\n\nEsta ação não pode ser desfeita.`,
+                onConfirm: async () => {
+                  try {
+                    await onDeleteRegistration(item.id);
+                  } catch (e) {
+                    setAlertConfig({
+                      isOpen: true,
+                      title: 'Erro ao Excluir',
+                      message: 'Erro ao excluir participante. Tente novamente.',
+                      type: 'error'
+                    });
+                  }
+                },
+                type: 'danger'
+              });
+            }}
+            className="bg-red-50 text-red-600 border border-red-100 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-red-100 transition-all flex items-center gap-1 shadow-sm"
+            title="Excluir Participante"
+          >
+            <span className="material-symbols-outlined text-[14px]">delete</span>
           </button>
         </div>
       ),
@@ -278,17 +399,56 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
         {/* List of Subscribers */}
         <div className="lg:col-span-2 space-y-6 w-full print:w-full px-4 md:px-0">
           <div className="bg-white md:rounded-[2.5rem] shadow-sm border-y md:border border-gray-100 overflow-hidden">
-            <div className="p-5 md:p-8 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
-              <h3 className="text-lg md:text-xl font-black text-gray-900">Participantes Registrados</h3>
-              {evento.inscritos.length > 0 && (
-                <button
-                  onClick={handleExport}
-                  className="bg-green-600 text-white px-5 py-2.5 rounded-xl text-xs font-black hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-100 w-full sm:w-auto"
-                >
-                  <span className="material-symbols-outlined text-lg">download</span>
-                  Exportar Excel
-                </button>
-              )}
+            <div className="p-5 md:p-8 border-b flex flex-col gap-6 no-print">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h3 className="text-lg md:text-xl font-black text-gray-900">Participantes Registrados</h3>
+                {evento.inscritos.length > 0 && (
+                  <button
+                    onClick={handleExport}
+                    className="bg-green-600 text-white px-5 py-2.5 rounded-xl text-xs font-black hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-100 w-full sm:w-auto"
+                  >
+                    <span className="material-symbols-outlined text-lg">download</span>
+                    Exportar Excel
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-4">
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                  <input
+                    type="text"
+                    placeholder="Buscar por nome, CPF ou e-mail..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+
+                {/* Filters */}
+                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-xs font-bold text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="all">Todos os Status</option>
+                    <option value="present">Presentes</option>
+                    <option value="pending">Pendentes</option>
+                  </select>
+
+                  <button
+                    onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                    className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-xs font-bold text-gray-600 hover:bg-gray-100 transition-all whitespace-nowrap"
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      {sortOrder === 'asc' ? 'sort_by_alpha' : 'sort_by_alpha'}
+                    </span>
+                    {sortOrder === 'asc' ? 'A-Z' : 'Z-A'}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Print Header */}
@@ -314,10 +474,10 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
             </div>
 
             <Table
-              data={evento.inscritos}
+              data={filteredInscritos}
               columns={columns}
               keyExtractor={(item) => item.id}
-              emptyMessage="Aguardando primeiros registros"
+              emptyMessage={searchTerm || statusFilter !== 'all' ? "Nenhum participante encontrado com esses filtros." : "Aguardando primeiros registros"}
             />
 
             <div className="hidden print-only p-20 mt-20 border-t-0">
@@ -333,6 +493,23 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+      />
+
+      <AlertDialog
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 };

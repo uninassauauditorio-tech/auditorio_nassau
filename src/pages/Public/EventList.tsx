@@ -151,6 +151,15 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
               </button>
             )}
           </div>
+
+          {/* Tutorial Button */}
+          <Link
+            to="/tutorial"
+            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl shadow-lg shadow-green-600/20 hover:bg-green-700 transition-all font-bold text-sm whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-lg">help</span>
+            Como se Inscrever?
+          </Link>
         </div>
 
         {(searchTerm || dateFilter !== 'all' || locationFilter !== 'all') && (

@@ -44,20 +44,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
   const interests = {
     graduacao: 0,
     pos: 0,
-    segunda: 0
+    segunda: 0,
+    semInteresse: 0  // NEW: count people with no interest
   };
 
   dateFilteredEventos.forEach(evento => {
     evento.inscritos.forEach(inscrito => {
-      if (inscrito.interesseGraduacao === 'Sim' || inscrito.interesseTipo === 'Graduação') {
+      // Only count if they actually selected a course
+      // The interesseTipo field contains: 'graduacao', 'pos', 'segunda_graduacao'
+      if (inscrito.interesseTipo === 'graduacao' && inscrito.cursoInteresse) {
         interests.graduacao++;
-      } else if (inscrito.interesseTipo === 'Pós-graduação') {
+      } else if (inscrito.interesseTipo === 'pos') {
+        // Pós always requires course selection
         interests.pos++;
-      } else if (inscrito.interesseTipo === 'Segunda Graduação') {
+      } else if (inscrito.interesseTipo === 'segunda_graduacao') {
+        // Segunda graduação always requires course selection
         interests.segunda++;
       }
     });
   });
+
+  // Sem interesse = Total de participantes - soma dos interesses
+  interests.semInteresse = totalParticipants - (interests.graduacao + interests.pos + interests.segunda);
 
   const clearFilters = () => {
     setDateStart('');
@@ -75,6 +83,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
           <p className="text-gray-500 mt-1 text-sm md:text-base">Gestão centralizada dos eventos no auditório institucional.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 px-4 md:px-0">
+          <Link
+            to="/admin/documentacao"
+            className="bg-white border-2 border-gray-100 text-gray-500 px-6 py-3.5 md:py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-gray-50 transition-all text-sm md:text-base"
+          >
+            <span className="material-symbols-outlined font-bold">menu_book</span>
+            Manual
+          </Link>
           <Link
             to="/admin/arquivo"
             className="bg-white border-2 border-gray-100 text-gray-500 px-6 py-3.5 md:py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-gray-50 transition-all text-sm md:text-base"
@@ -173,7 +188,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
           <span className="material-symbols-outlined text-primary">school</span>
           Perfil de Interesse dos Participantes
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="flex items-center justify-between p-4 bg-blue-50 rounded-2xl border border-blue-100">
             <div>
               <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">Graduação</p>
@@ -194,6 +209,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
               <p className="text-3xl font-black text-green-700 mt-1">{interests.segunda}</p>
             </div>
             <span className="material-symbols-outlined text-4xl text-green-300">auto_stories</span>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+            <div>
+              <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Sem Interesse</p>
+              <p className="text-3xl font-black text-gray-700 mt-1">{interests.semInteresse}</p>
+            </div>
+            <span className="material-symbols-outlined text-4xl text-gray-300">block</span>
           </div>
         </div>
       </div>
@@ -280,7 +302,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
           </table>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

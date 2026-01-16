@@ -5,6 +5,7 @@ import { Evento } from '../../types';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
 import { Button } from '../../components/ui/Button';
+import AlertDialog from '../../components/ui/AlertDialog';
 
 interface AdminEventFormProps {
   onSave: (evento: any) => void;
@@ -24,6 +25,18 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, onUpload, initi
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
 
   useEffect(() => {
     if (initialData) {
@@ -57,7 +70,12 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, onUpload, initi
       navigate('/admin');
     } catch (error) {
       console.error('Erro ao salvar evento:', error);
-      alert('Erro ao salvar evento. Verifique a imagem e tente novamente.');
+      setAlertConfig({
+        isOpen: true,
+        title: 'Erro ao Salvar',
+        message: 'Erro ao salvar evento. Verifique a imagem e tente novamente.',
+        type: 'error'
+      });
     } finally {
       setIsUploading(false);
     }
@@ -182,6 +200,14 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, onUpload, initi
           </div>
         </form>
       </div>
+
+      <AlertDialog
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 };

@@ -1,89 +1,136 @@
-import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import { Evento, Inscrito } from '../types';
-import logo from '../assets/img/logo.png';
 
-export const generateReceipt = async (evento: Evento, inscrito: Inscrito) => {
+export const generateReceipt = async (evento: Evento, inscrito: Inscrito, onSuccess?: () => void) => {
+    // Generate QR Code
     const qrCodeDataUrl = await QRCode.toDataURL(inscrito.qrToken, {
         margin: 1,
-        width: 200,
+        width: 400,
         color: {
-            dark: '#004A99',
-            light: '#FFFFFF'
+            dark: '#004a99',
+            light: '#ffffff'
         }
     });
 
-    const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
+    const primaryColor = '#004a99';
+    const secondaryColor = '#333333';
+    const lightGray = '#f3f4f6';
+
+    // Create a receipt container in the DOM
+    const container = document.createElement('div');
+    container.style.cssText = `
+        width: 595px;
+        height: 842px;
+        background: white;
+        position: absolute;
+        left: -9999px;
+        font-family: Arial, Helvetica, sans-serif;
+        padding: 40px;
+        box-sizing: border-box;
+    `;
+
+    const title = inscrito.checkedIn ? 'CERTIFICADO DE PRESENÇA' : 'COMPROVANTE DE INSCRIÇÃO';
+    const fileName = inscrito.checkedIn ? 'certificado' : 'comprovante';
+    const statusText = inscrito.checkedIn ? 'PRESENÇA VALIDADA' : 'VALIDADO PELO SISTEMA';
+    const footerText = inscrito.checkedIn
+        ? 'Este documento certifica a presença do participante no evento acima citado.'
+        : 'Este comprovante deverá ser apresentado na entrada para validação de presença.';
+
+    container.innerHTML = `
+        <div style="border: 4px solid ${primaryColor}; border-radius: 20px; padding: 30px; height: 100%; box-sizing: border-box; position: relative;">
+            <!-- Header -->
+            <div style="background: ${primaryColor}; margin: -30px -30px 30px -30px; padding: 30px; border-radius: 16px 16px 0 0; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 36px; font-weight: bold; letter-spacing: 2px;">UNINASSAU</h1>
+                <p style="color: white; margin: 10px 0 0 0; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">${title}</p>
+            </div>
+
+            <!-- Event Name -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="color: ${primaryColor}; font-size: 20px; font-weight: bold; margin: 0; text-transform: uppercase;">${evento.nome}</h2>
+            </div>
+
+            <!-- Participant Info -->
+            <div style="margin-bottom: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <p style="color: #999; font-size: 12px; margin: 0; text-transform: uppercase;">Participante</p>
+                    <p style="color: ${secondaryColor}; font-size: 18px; font-weight: bold; margin: 5px 0 0 0; text-transform: uppercase;">${inscrito.nomeCompleto}</p>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <p style="color: #999; font-size: 12px; margin: 0; text-transform: uppercase;">CPF</p>
+                    <p style="color: ${secondaryColor}; font-size: 18px; font-weight: bold; margin: 5px 0 0 0;">${inscrito.cpf}</p>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <p style="color: #999; font-size: 12px; margin: 0; text-transform: uppercase;">Evento</p>
+                    <p style="color: ${secondaryColor}; font-size: 18px; font-weight: bold; margin: 5px 0 0 0;">${evento.nome}</p>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <p style="color: #999; font-size: 12px; margin: 0; text-transform: uppercase;">Data do Evento</p>
+                    <p style="color: ${secondaryColor}; font-size: 18px; font-weight: bold; margin: 5px 0 0 0;">${new Date(evento.data).toLocaleDateString('pt-BR')} às ${evento.horario}</p>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <p style="color: #999; font-size: 12px; margin: 0; text-transform: uppercase;">Local</p>
+                    <p style="color: ${secondaryColor}; font-size: 18px; font-weight: bold; margin: 5px 0 0 0;">${evento.local}</p>
+                </div>
+                ${inscrito.checkedIn && inscrito.checkinDate ? `
+                <div style="margin-bottom: 15px;">
+                    <p style="color: #999; font-size: 12px; margin: 0; text-transform: uppercase;">Data/Hora da Presença</p>
+                    <p style="color: ${secondaryColor}; font-size: 18px; font-weight: bold; margin: 5px 0 0 0;">${new Date(inscrito.checkinDate).toLocaleString('pt-BR')}</p>
+                </div>
+                ` : ''}
+            </div>
+
+            <!-- QR Code -->
+            <div style="text-align: center; margin: 30px 0;">
+                <img src="${qrCodeDataUrl}" style="width: 150px; height: 150px; border: 3px solid ${primaryColor}; border-radius: 10px;" />
+                <p style="color: ${primaryColor}; font-size: 12px; font-weight: bold; margin: 10px 0 0 0; text-transform: uppercase;">Apresente este QR Code na entrada</p>
+            </div>
+
+            <!-- Status Badge -->
+            <div style="background: ${lightGray}; padding: 15px; border-radius: 10px; text-align: center; margin: 20px 0;">
+                <p style="color: #666; font-size: 14px; font-weight: bold; margin: 0; text-transform: uppercase;">${statusText}</p>
+            </div>
+
+            <!-- Footer -->
+            <div style="position: absolute; bottom: 30px; left: 30px; right: 30px; text-align: center;">
+                <p style="color: #999; font-size: 12px; font-style: italic; margin: 0;">${footerText}</p>
+                <p style="color: #999; font-size: 12px; font-style: italic; margin: 5px 0 0 0;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(container);
+
+    // Import html2canvas dynamically
+    const html2canvas = (await import('html2canvas')).default;
+
+    // Convert to canvas
+    const canvas = await html2canvas(container, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false
     });
 
-    const primaryColor = '#004A99';
-    const secondaryColor = '#333333';
-    const lightGray = '#F9FAFB';
+    // Remove container from DOM
+    document.body.removeChild(container);
 
-    // Header
-    doc.setFillColor(primaryColor);
-    doc.rect(0, 0, 210, 40, 'F');
+    // Convert canvas to PNG
+    canvas.toBlob(async (blob) => {
+        if (!blob) return;
 
-    try {
-        doc.addImage(logo, 'PNG', 15, 10, 45, 20);
-    } catch (e) {
-        doc.setTextColor('#FFFFFF');
-        doc.setFontSize(24);
-        doc.setFont('helvetica', 'bold');
-        doc.text('UNINASSAU', 15, 25);
-    }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${fileName}-${inscrito.nomeCompleto.toLowerCase().replace(/\s+/g, '-')}.png`;
 
-    doc.setTextColor('#FFFFFF');
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('COMPROVANTE DE INSCRIÇÃO', 195, 25, { align: 'right' });
+        // Download the file
+        link.click();
 
-    // Body
-    doc.setTextColor(secondaryColor);
-    let y = 55;
+        // Call success callback to show modal
+        if (onSuccess) {
+            setTimeout(onSuccess, 500);
+        }
 
-    const addField = (label: string, value: string) => {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor('#999999');
-        doc.text(label.toUpperCase(), 20, y);
-        y += 6;
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.setTextColor(secondaryColor);
-        doc.text(value, 20, y);
-        y += 10;
-    };
-
-    addField('Participante', inscrito.nomeCompleto.toUpperCase());
-    addField('CPF', inscrito.cpf);
-    addField('Evento', evento.nome);
-    addField('Data do Evento', `${new Date(evento.data).toLocaleDateString('pt-BR')} às ${evento.horario}`);
-    addField('Local', evento.local);
-
-    // QR Code
-    const qrY = y + 5;
-    doc.addImage(qrCodeDataUrl, 'PNG', 85, qrY, 40, 40);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(primaryColor);
-    doc.text('APRESENTE ESTE QR CODE NA ENTRADA', 105, qrY + 43, { align: 'center' });
-    y = qrY + 50;
-
-    doc.setFillColor(lightGray);
-    doc.roundedRect(80, y, 50, 15, 3, 3, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor('#666666');
-    doc.text('VALIDADO PELO SISTEMA', 105, y + 9, { align: 'center' });
-
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(8);
-    doc.setTextColor('#999999');
-    doc.text('Este comprovante deverá ser apresentado na entrada para validação de presença.', 105, 280, { align: 'center' });
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 105, 287, { align: 'center' });
-
-    doc.save(`comprovante-${inscrito.nomeCompleto.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+        // Cleanup
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }, 'image/png');
 };

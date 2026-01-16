@@ -209,6 +209,16 @@ export class SupabaseEventService implements EventService {
         };
     }
 
+    async deleteRegistration(id: string): Promise<void> {
+        if (!supabase) throw new Error('Supabase não configurado.');
+        const { error } = await supabase
+            .from('registrations')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+    }
+
     async validateCheckin(token: string): Promise<{ success: boolean; message: string; inscrito?: Inscrito }> {
         if (!supabase) throw new Error('Supabase não configurado.');
 

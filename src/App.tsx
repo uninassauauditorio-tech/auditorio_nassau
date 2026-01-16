@@ -9,9 +9,11 @@ import AdminDashboard from './pages/Admin/Dashboard';
 import AdminArchive from './pages/Admin/Archive';
 import AdminEventForm from './pages/Admin/EventForm';
 import AdminEventDetails from './pages/Admin/EventDetails';
+import AdminDocumentation from './pages/Admin/Documentation';
 import PublicEventList from './pages/Public/EventList';
 import PublicEventRegistration from './pages/Public/EventRegistration';
 import CheckinPage from './pages/Public/Checkin';
+import TutorialPage from './pages/Public/TutorialPage';
 
 const App: React.FC = () => {
   const store = useStore();
@@ -44,6 +46,10 @@ const App: React.FC = () => {
               path="/checkin"
               element={<CheckinPage validateCheckin={store.validateCheckin} />}
             />
+            <Route
+              path="/tutorial"
+              element={<TutorialPage />}
+            />
 
             {/* Admin Routes */}
             <Route
@@ -68,12 +74,17 @@ const App: React.FC = () => {
 
             <Route
               path="/admin/evento/:id"
-              element={store.isAdmin ? <AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onCheckin={store.validateCheckin} /> : <Navigate to="/admin/login" />}
+              element={store.isAdmin ? <AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onDeleteRegistration={store.deleteInscrito} onCheckin={store.validateCheckin} /> : <Navigate to="/admin/login" />}
             />
 
             <Route
               path="/admin/evento/:id/editar"
               element={store.isAdmin ? <AdminEventEditWrapper eventos={store.eventos} onSave={store.updateEvento} onUpload={store.uploadImage} /> : <Navigate to="/admin/login" />}
+            />
+
+            <Route
+              path="/admin/documentacao"
+              element={store.isAdmin ? <AdminDocumentation /> : <Navigate to="/admin/login" />}
             />
 
             {/* Catch All */}

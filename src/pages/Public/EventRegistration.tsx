@@ -9,6 +9,7 @@ import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import logo from '../../assets/img/logo.png';
 import { generateReceipt } from '../../utils/receipt';
+import AlertDialog from '../../components/ui/AlertDialog';
 
 interface PublicEventRegistrationProps {
   eventos: Evento[];
@@ -53,6 +54,18 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
   const [registeredInscrito, setRegisteredInscrito] = useState<Inscrito | null>(null);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
   // Helper Functions para Máscaras
   const maskCPF = (value: string) => {
     return value
@@ -84,7 +97,8 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
 
   const showCourseField =
     (showGradInterest && formData.interesseGraduacao === 'Sim') ||
-    (showHigherInterest && formData.interesseTipo === 'Segunda Graduação');
+    (showHigherInterest && formData.interesseTipo === 'Segunda Graduação') ||
+    (showHigherInterest && formData.interesseTipo === 'Pós-graduação');
 
   const isFormValid =
     formData.nomeCompleto.trim().length >= 3 &&
@@ -167,14 +181,27 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
       .catch(err => {
         console.error('Erro ao registrar:', err);
         setIsSubmitting(false);
-        alert('Erro ao realizar inscrição. Tente novamente.');
+        setAlertConfig({
+          isOpen: true,
+          title: 'Erro na Inscrição',
+          message: 'Erro ao realizar inscrição. Tente novamente.',
+          type: 'error'
+        });
       });
   };
 
   const handleDownload = async () => {
     if (registeredInscrito) {
-      await generateReceipt(evento, registeredInscrito);
-      setIsDownloaded(true);
+      await generateReceipt(evento, registeredInscrito, () => {
+        // Show success modal
+        setAlertConfig({
+          isOpen: true,
+          title: 'Comprovante Baixado!',
+          message: 'Seu comprovante foi baixado com sucesso!\n\n📱 No celular: Verifique na Galeria de Fotos ou pasta Downloads\n💻 No computador: Verifique na pasta Downloads',
+          type: 'success'
+        });
+        setIsDownloaded(true);
+      });
     }
   };
 
@@ -238,6 +265,15 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
             </button>
           </div>
         </div>
+
+        {/* Alert Dialog */}
+        <AlertDialog
+          isOpen={alertConfig.isOpen}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          type={alertConfig.type}
+          onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        />
       </div>
     );
   }
@@ -245,10 +281,19 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
   return (
     <div className="min-h-[calc(100vh-80px)] py-8 px-4">
       <div className="max-w-6xl mx-auto animate-in">
-        <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-primary transition-colors mb-10 text-sm font-black uppercase tracking-tighter no-print">
-          <span className="material-symbols-outlined font-bold">arrow_back</span>
-          Programação do Auditório
-        </Link>
+        <div className="flex items-center justify-between mb-10">
+          <Link to="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-primary transition-colors text-sm font-black uppercase tracking-tighter no-print">
+            <span className="material-symbols-outlined font-bold">arrow_back</span>
+            Voltar
+          </Link>
+          <Link
+            to="/tutorial?from=form"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow-lg shadow-green-600/20 hover:bg-green-700 transition-all font-bold text-sm no-print"
+          >
+            <span className="material-symbols-outlined text-lg">help</span>
+            Como se Inscrever?
+          </Link>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10">
           <div className="lg:col-span-7 space-y-6 md:space-y-8">
@@ -411,6 +456,14 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
           </div>
         </div>
       </div>
+
+      <AlertDialog
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 };
