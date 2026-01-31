@@ -182,8 +182,9 @@ export const generateEventRedirectQRCode = async (
         footer: customTexts?.footer || 'Inscrições gratuitas • Vagas limitadas • Garanta sua presença'
     };
 
-    // Generate QR Code with higher resolution
-    const qrCodeDataUrl = await QRCode.toDataURL(registrationUrl, {
+    // Generate QR Code with higher resolution - using canvas for better html2canvas compatibility
+    const qrCanvas = document.createElement('canvas');
+    await QRCode.toCanvas(qrCanvas, registrationUrl, {
         margin: 2,
         width: 800,
         color: {
@@ -193,8 +194,12 @@ export const generateEventRedirectQRCode = async (
         errorCorrectionLevel: 'H'
     });
 
+    // Convert canvas to data URL for embedding
+    const qrCodeDataUrl = qrCanvas.toDataURL('image/png');
+
     console.log('✅ QR Code gerado para URL:', registrationUrl);
     console.log('📊 Tamanho do QR Code (base64):', qrCodeDataUrl.length, 'caracteres');
+
 
 
     const container = document.createElement('div');
@@ -327,11 +332,16 @@ export const generateEventRedirectQRCode = async (
                     border-radius: 20px;
                     box-shadow: 0 10px 40px rgba(0,74,153,0.2);
                 ">
-                    <img src="${qrCodeDataUrl}" style="
-                        width: 240px;
-                        height: 240px;
-                        display: block;
-                    " />
+                    <img 
+                        src="${qrCodeDataUrl}" 
+                        alt="QR Code de Inscrição"
+                        crossorigin="anonymous"
+                        style="
+                            width: 240px;
+                            height: 240px;
+                            display: block;
+                        " 
+                    />
                 </div>
 
                 <p style="
