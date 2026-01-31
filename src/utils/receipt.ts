@@ -290,12 +290,6 @@ export const generateEventRedirectQRCode = async (
         // Add QR Code image
         doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
 
-        // QR Code label
-        doc.setTextColor(primaryColorRGB.r, primaryColorRGB.g, primaryColorRGB.b);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('📱 ESCANEIE COM A CÂMERA DO CELULAR', pageWidth / 2, qrY + qrSize + 8, { align: 'center' });
-
         yPos += qrBoxHeight + 8;
 
         // Footer section
