@@ -193,6 +193,10 @@ export const generateEventRedirectQRCode = async (
         errorCorrectionLevel: 'H'
     });
 
+    console.log('✅ QR Code gerado para URL:', registrationUrl);
+    console.log('📊 Tamanho do QR Code (base64):', qrCodeDataUrl.length, 'caracteres');
+
+
     const container = document.createElement('div');
     // A4 Portrait: 210mm x 297mm = 595px x 842px at 72 DPI
     container.style.cssText = `
@@ -388,23 +392,47 @@ const downloadContainerAsImage = async (container: HTMLElement, fileName: string
     document.body.appendChild(container);
 
     try {
+        // Aguardar que todas as imagens sejam carregadas
+        const images = container.querySelectorAll('img');
+        await Promise.all(
+            Array.from(images).map((img) => {
+                if (img.complete) return Promise.resolve();
+                return new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    // Timeout de segurança
+                    setTimeout(resolve, 2000);
+                });
+            })
+        );
+
+        // Aguardar um pouco mais para garantir renderização completa
+        await new Promise(resolve => setTimeout(resolve, 300));
+
         const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(container, {
             scale: 2,
             backgroundColor: '#ffffff',
             logging: false,
             useCORS: true,
-            allowTaint: true
+            allowTaint: true,
+            imageTimeout: 0, // Sem timeout para imagens
+            removeContainer: false // Não remover container automaticamente
         });
 
         canvas.toBlob((blob) => {
-            if (!blob) return;
+            if (!blob) {
+                console.error('Erro: Blob não gerado');
+                return;
+            }
 
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.download = `${fileName}.png`;
             link.click();
+
+            console.log('✅ QR Code gerado com sucesso:', fileName);
 
             if (onSuccess) {
                 setTimeout(onSuccess, 500);
@@ -413,7 +441,8 @@ const downloadContainerAsImage = async (container: HTMLElement, fileName: string
             setTimeout(() => URL.revokeObjectURL(url), 10000);
         }, 'image/png');
     } catch (error) {
-        console.error('Erro ao gerar imagem:', error);
+        console.error('❌ Erro ao gerar imagem:', error);
+        alert('Erro ao gerar QR Code. Verifique o console para mais detalhes.');
     } finally {
         document.body.removeChild(container);
     }
