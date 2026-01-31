@@ -11,6 +11,7 @@ interface ConfirmDialogProps {
     confirmText?: string;
     cancelText?: string;
     type?: 'danger' | 'warning' | 'info';
+    children?: React.ReactNode;
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -21,7 +22,8 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     message,
     confirmText = 'Confirmar',
     cancelText = 'Cancelar',
-    type = 'info'
+    type = 'info',
+    children
 }) => {
     const getIcon = () => {
         switch (type) {
@@ -58,6 +60,8 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 <p className="text-gray-500 font-medium mb-8 leading-relaxed">
                     {message}
                 </p>
+
+                {children}
 
                 <div className="grid grid-cols-2 gap-3 w-full">
                     <button

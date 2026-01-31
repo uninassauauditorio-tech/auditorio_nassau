@@ -100,15 +100,21 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
     (showHigherInterest && formData.interesseTipo === 'Segunda Graduação') ||
     (showHigherInterest && formData.interesseTipo === 'Pós-graduação');
 
-  const isFormValid =
-    formData.nomeCompleto.trim().length >= 3 &&
-    formData.telefone.length === 15 &&
-    formData.cpf.length === 14 &&
-    validateEmail(formData.email) &&
-    formData.escolaridade !== '' &&
-    (!showGradInterest || formData.interesseGraduacao !== '') &&
-    (!showHigherInterest || formData.interesseTipo !== '') &&
-    (!showCourseField || formData.cursoInteresse !== '');
+  const isExterno = evento.tipo === 'externo';
+
+  const isFormValid = isExterno
+    ? (formData.nomeCompleto.trim().length >= 3 &&
+      formData.telefone.length === 15 &&
+      formData.interesseGraduacao !== '' &&
+      (formData.interesseGraduacao === 'Não' || formData.cursoInteresse !== ''))
+    : (formData.nomeCompleto.trim().length >= 3 &&
+      formData.telefone.length === 15 &&
+      formData.cpf.length === 14 &&
+      validateEmail(formData.email) &&
+      formData.escolaridade !== '' &&
+      (!showGradInterest || formData.interesseGraduacao !== '') &&
+      (!showHigherInterest || formData.interesseTipo !== '') &&
+      (!showCourseField || formData.cursoInteresse !== ''));
 
   useEffect(() => {
     setFormData(prev => ({
@@ -141,10 +147,13 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
     const payload: any = {
       nomeCompleto: formData.nomeCompleto,
       telefone: formData.telefone,
-      cpf: formData.cpf,
-      email: formData.email,
-      escolaridade: formData.escolaridade,
     };
+
+    if (!isExterno) {
+      payload.cpf = formData.cpf;
+      payload.email = formData.email;
+      payload.escolaridade = formData.escolaridade;
+    }
 
     if (formData.interesseGraduacao) payload.interesseGraduacao = formData.interesseGraduacao;
     if (formData.interesseTipo) payload.interesseTipo = formData.interesseTipo;
@@ -363,74 +372,109 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
                   required
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Telefone"
-                    type="tel"
-                    placeholder="(00) 00000-0000"
-                    value={formData.telefone}
-                    onChange={e => setFormData({ ...formData, telefone: maskPhone(e.target.value) })}
-                    required
-                  />
-                  <Input
-                    label="CPF"
-                    placeholder="000.000.000-00"
-                    value={formData.cpf}
-                    onChange={e => setFormData({ ...formData, cpf: maskCPF(e.target.value) })}
-                    required
-                  />
-                </div>
+                {!isExterno ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        label="Telefone"
+                        type="tel"
+                        placeholder="(00) 00000-0000"
+                        value={formData.telefone}
+                        onChange={e => setFormData({ ...formData, telefone: maskPhone(e.target.value) })}
+                        required
+                      />
+                      <Input
+                        label="CPF"
+                        placeholder="000.000.000-00"
+                        value={formData.cpf}
+                        onChange={e => setFormData({ ...formData, cpf: maskCPF(e.target.value) })}
+                        required
+                      />
+                    </div>
 
-                <Input
-                  label="E-mail"
-                  type="email"
-                  placeholder="exemplo@email.com"
-                  value={formData.email}
-                  onChange={e => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
-                  error={formData.email && !validateEmail(formData.email) ? "Formato de e-mail inválido." : undefined}
-                  required
-                />
+                    <Input
+                      label="E-mail"
+                      type="email"
+                      placeholder="exemplo@email.com"
+                      value={formData.email}
+                      onChange={e => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
+                      error={formData.email && !validateEmail(formData.email) ? "Formato de e-mail inválido." : undefined}
+                      required
+                    />
 
-                <Select
-                  label="Escolaridade Atual"
-                  placeholder="Selecione uma opção..."
-                  value={formData.escolaridade}
-                  onChange={e => setFormData({ ...formData, escolaridade: e.target.value })}
-                  options={Object.values(Escolaridade).map(esc => ({ value: esc, label: esc }))}
-                  required
-                />
+                    <Select
+                      label="Escolaridade Atual"
+                      placeholder="Selecione uma opção..."
+                      value={formData.escolaridade}
+                      onChange={e => setFormData({ ...formData, escolaridade: e.target.value })}
+                      options={Object.values(Escolaridade).map(esc => ({ value: esc, label: esc }))}
+                      required
+                    />
 
-                {showGradInterest && (
-                  <RadioGroup
-                    label="Você tem interesse em cursar uma graduação?"
-                    name="interesseGraduacao"
-                    options={['Sim', 'Não']}
-                    value={formData.interesseGraduacao}
-                    onChange={val => setFormData({ ...formData, interesseGraduacao: val })}
-                    required
-                  />
-                )}
+                    {showGradInterest && (
+                      <RadioGroup
+                        label="Você tem interesse em cursar uma graduação?"
+                        name="interesseGraduacao"
+                        options={['Sim', 'Não']}
+                        value={formData.interesseGraduacao}
+                        onChange={val => setFormData({ ...formData, interesseGraduacao: val })}
+                        required
+                      />
+                    )}
 
-                {showHigherInterest && (
-                  <RadioGroup
-                    label="Você tem interesse em:"
-                    name="interesseTipo"
-                    options={['Segunda Graduação', 'Pós-graduação', 'Não tenho interesse no momento']}
-                    value={formData.interesseTipo}
-                    onChange={val => setFormData({ ...formData, interesseTipo: val })}
-                    required
-                  />
-                )}
+                    {showHigherInterest && (
+                      <RadioGroup
+                        label="Você tem interesse em:"
+                        name="interesseTipo"
+                        options={['Segunda Graduação', 'Pós-graduação', 'Não tenho interesse no momento']}
+                        value={formData.interesseTipo}
+                        onChange={val => setFormData({ ...formData, interesseTipo: val })}
+                        required
+                      />
+                    )}
 
-                {showCourseField && (
-                  <Select
-                    label="Qual curso você tem interesse?"
-                    placeholder="Selecione o curso..."
-                    value={formData.cursoInteresse}
-                    onChange={e => setFormData({ ...formData, cursoInteresse: e.target.value })}
-                    options={COURSES.map(course => ({ value: course, label: course }))}
-                    required
-                  />
+                    {showCourseField && (
+                      <Select
+                        label="Qual curso você tem interesse?"
+                        placeholder="Selecione o curso..."
+                        value={formData.cursoInteresse}
+                        onChange={e => setFormData({ ...formData, cursoInteresse: e.target.value })}
+                        options={COURSES.map(course => ({ value: course, label: course }))}
+                        required
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Input
+                      label="Telefone"
+                      type="tel"
+                      placeholder="(00) 00000-0000"
+                      value={formData.telefone}
+                      onChange={e => setFormData({ ...formData, telefone: maskPhone(e.target.value) })}
+                      required
+                    />
+
+                    <RadioGroup
+                      label="Você tem interesse em cursar uma graduação?"
+                      name="interesseGraduacao"
+                      options={['Sim', 'Não']}
+                      value={formData.interesseGraduacao}
+                      onChange={val => setFormData({ ...formData, interesseGraduacao: val })}
+                      required
+                    />
+
+                    {formData.interesseGraduacao === 'Sim' && (
+                      <Select
+                        label="Qual curso você tem interesse?"
+                        placeholder="Selecione o curso..."
+                        value={formData.cursoInteresse}
+                        onChange={e => setFormData({ ...formData, cursoInteresse: e.target.value })}
+                        options={COURSES.map(course => ({ value: course, label: course }))}
+                        required
+                      />
+                    )}
+                  </>
                 )}
 
                 <Button

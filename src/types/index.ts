@@ -9,6 +9,7 @@ export interface Evento {
   encerrado: boolean;
   inscritos: Inscrito[];
   imagem?: string;
+  tipo?: 'interno' | 'externo';
 }
 
 export interface Inscrito {

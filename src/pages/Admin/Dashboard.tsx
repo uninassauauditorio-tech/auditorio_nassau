@@ -250,8 +250,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
               {filteredEventos.map(evento => (
                 <tr key={evento.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-8 py-6">
-                    <p className="font-bold text-gray-900 group-hover:text-primary transition-colors">{evento.nome}</p>
-                    <p className="text-xs text-gray-400 font-medium">{evento.local}</p>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-gray-900 group-hover:text-primary transition-colors">{evento.nome}</p>
+                        {evento.tipo === 'externo' && (
+                          <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[8px] font-black uppercase tracking-widest rounded-md border border-purple-100">
+                            Externo
+                          </span>
+                        )}
+                        {evento.tipo === 'interno' && (
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-widest rounded-md border border-blue-100">
+                            Interno
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 font-medium">{evento.local}</p>
+                    </div>
                   </td>
                   <td className="px-8 py-6">
                     <p className="text-sm font-bold text-gray-700">{new Date(evento.data).toLocaleDateString('pt-BR')}</p>

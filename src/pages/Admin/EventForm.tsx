@@ -21,7 +21,8 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, onUpload, initi
     horario: '',
     descricao: '',
     local: 'Auditório UNINASSAU Olinda',
-    imagem: ''
+    imagem: '',
+    tipo: 'interno' as 'interno' | 'externo'
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -46,7 +47,8 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, onUpload, initi
         horario: initialData.horario,
         descricao: initialData.descricao,
         local: initialData.local,
-        imagem: initialData.imagem || ''
+        imagem: initialData.imagem || '',
+        tipo: initialData.tipo || 'interno'
       });
     }
   }, [initialData]);
@@ -130,6 +132,21 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, onUpload, initi
             onChange={e => setFormData({ ...formData, local: e.target.value })}
             required
           />
+
+          <div className="flex flex-col gap-2">
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Tipo do Evento</label>
+            <select
+              className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+              value={formData.tipo}
+              onChange={e => setFormData({ ...formData, tipo: e.target.value as 'interno' | 'externo' })}
+            >
+              <option value="interno">🎓 Evento Interno (Formulário Completo)</option>
+              <option value="externo">🌍 Evento Externo (Formulário Simplificado)</option>
+            </select>
+            <p className="text-[10px] text-gray-400 font-medium">
+              Eventos externos solicitam apenas Nome, Telefone e Interesse em Graduação.
+            </p>
+          </div>
 
           <div className="space-y-2">
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Imagem do Evento (Opcional)</label>

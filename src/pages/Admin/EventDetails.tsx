@@ -24,6 +24,8 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'present' | 'pending'>('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
 
   // Modal States
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -62,8 +64,8 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
       const term = searchTerm.toLowerCase();
       result = result.filter(i =>
         i.nomeCompleto.toLowerCase().includes(term) ||
-        i.cpf.includes(term) ||
-        i.email.toLowerCase().includes(term)
+        (i.cpf && i.cpf.includes(term)) ||
+        (i.email && i.email.toLowerCase().includes(term))
       );
     }
 
@@ -103,16 +105,35 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
   };
 
   const handleDelete = () => {
+    setDeletePassword('');
+    setPasswordError(false);
     setConfirmConfig({
       isOpen: true,
       title: 'Excluir Evento',
-      message: `ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nDeseja realmente excluir o evento "${evento.nome}"?\n\nTodos os registros de participantes também serão excluídos.`,
+      message: `ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nDeseja realmente excluir o evento "${evento.nome}"?\n\nTodos os registros de participantes também serão excluídos.\n\nDIGITE A SENHA DE SEGURANÇA PARA PROSSEGUIR:`,
       onConfirm: () => {
-        onDelete(evento.id);
-        navigate('/admin');
+        // Validation happens inside the component handle or here? 
+        // Let's handle it in the component and only call deletion if password is correct.
       },
       type: 'danger'
     });
+  };
+
+  const handleConfirmDelete = () => {
+    const MASTER_PASSWORD = '240686';
+    if (deletePassword === MASTER_PASSWORD) {
+      onDelete(evento?.id || '');
+      setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      navigate('/admin');
+    } else {
+      setPasswordError(true);
+      setAlertConfig({
+        isOpen: true,
+        title: 'Senha Incorreta',
+        message: 'A senha digitada está incorreta. A exclusão foi cancelada.',
+        type: 'error'
+      });
+    }
   };
 
   const handlePrint = () => {
@@ -348,6 +369,20 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
               </span>
             </div>
 
+            <div className="mb-6">
+              {evento.tipo === 'externo' ? (
+                <span className="px-4 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-purple-100 flex items-center gap-2 w-fit">
+                  <span className="material-symbols-outlined text-sm">public</span>
+                  Evento Externo
+                </span>
+              ) : (
+                <span className="px-4 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-blue-100 flex items-center gap-2 w-fit">
+                  <span className="material-symbols-outlined text-sm">school</span>
+                  Evento Interno
+                </span>
+              )}
+            </div>
+
             <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-6 leading-tight tracking-tight">{evento.nome}</h2>
 
             <div className="space-y-5 border-t border-gray-50 pt-6">
@@ -496,12 +531,34 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
 
       <ConfirmDialog
         isOpen={confirmConfig.isOpen}
-        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
-        onConfirm={confirmConfig.onConfirm}
+        onClose={() => {
+          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+          setDeletePassword('');
+          setPasswordError(false);
+        }}
+        onConfirm={confirmConfig.title === 'Excluir Evento' ? handleConfirmDelete : confirmConfig.onConfirm}
         title={confirmConfig.title}
         message={confirmConfig.message}
         type={confirmConfig.type}
-      />
+      >
+        {confirmConfig.title === 'Excluir Evento' && (
+          <div className="mt-4 w-full px-8">
+            <input
+              type="password"
+              placeholder="Senha de segurança"
+              value={deletePassword}
+              onChange={(e) => {
+                setDeletePassword(e.target.value);
+                setPasswordError(false);
+              }}
+              className={`w-full px-4 py-3 bg-gray-50 border-2 rounded-xl text-center text-lg font-black tracking-[0.5em] focus:outline-none focus:ring-2 transition-all ${passwordError ? 'border-red-500 focus:ring-red-200' : 'border-gray-100 focus:ring-primary/20 focus:border-primary'
+                }`}
+              autoFocus
+            />
+            {passwordError && <p className="text-red-500 text-[10px] font-black mt-2 uppercase">Senha incorreta!</p>}
+          </div>
+        )}
+      </ConfirmDialog>
 
       <AlertDialog
         isOpen={alertConfig.isOpen}

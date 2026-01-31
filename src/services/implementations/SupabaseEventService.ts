@@ -22,6 +22,7 @@ export class SupabaseEventService implements EventService {
                 local: event.local,
                 encerrado: event.status === 'encerrado',
                 imagem: event.imagem_url,
+                tipo: event.tipo || 'interno',
                 inscritos: (event.registrations || []).map((reg: any) => ({
                     id: reg.id,
                     nomeCompleto: reg.nome,
@@ -65,6 +66,7 @@ export class SupabaseEventService implements EventService {
                 local: data.local,
                 encerrado: data.status === 'encerrado',
                 imagem: data.imagem_url,
+                tipo: data.tipo || 'interno',
                 inscritos: (data.registrations || []).map((reg: any) => ({
                     id: reg.id,
                     nomeCompleto: reg.nome,
@@ -98,7 +100,8 @@ export class SupabaseEventService implements EventService {
                 horario_evento: eventoData.horario,
                 local: eventoData.local,
                 imagem_url: (eventoData as any).imagem,
-                status: 'ativo'
+                status: 'ativo',
+                tipo: (eventoData as any).tipo || 'interno'
             }])
             .select()
             .single();
@@ -128,7 +131,8 @@ export class SupabaseEventService implements EventService {
                 horario_evento: evento.horario,
                 local: evento.local,
                 imagem_url: evento.imagem,
-                status: evento.encerrado ? 'encerrado' : 'ativo'
+                status: evento.encerrado ? 'encerrado' : 'ativo',
+                tipo: evento.tipo
             })
             .eq('id', evento.id)
             .select()
@@ -144,6 +148,7 @@ export class SupabaseEventService implements EventService {
             local: data.local,
             encerrado: data.status === 'encerrado',
             imagem: data.imagem_url,
+            tipo: data.tipo || 'interno',
             inscritos: evento.inscritos
         };
     }

@@ -219,6 +219,7 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
                       <span className="date-badge-day">{day}</span>
                       <span className="date-badge-month">{month}</span>
                     </div>
+
                   </div>
 
                   {/* Card Content */}
@@ -254,7 +255,7 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 
