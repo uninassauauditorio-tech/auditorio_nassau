@@ -212,7 +212,7 @@ export const generateEventRedirectQRCode = async (
             width: 100%;
             height: 100%;
             background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            padding: 50px 40px;
+            padding: 35px 30px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -234,30 +234,30 @@ export const generateEventRedirectQRCode = async (
 
             <!-- Header -->
             <div style="text-align: center; position: relative; z-index: 1;">
-                <img src="${logo}" style="height: 90px; margin-bottom: 30px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" />
+                <img src="${logo}" style="height: 70px; margin-bottom: 25px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" />
                 
                 <div style="
                     background: white;
-                    border: 6px solid ${primaryColor};
-                    border-radius: 30px;
-                    padding: 30px 40px;
+                    border: 5px solid ${primaryColor};
+                    border-radius: 25px;
+                    padding: 25px 30px;
                     box-shadow: 0 10px 40px rgba(0,74,153,0.15);
                 ">
                     <h1 style="
                         color: ${primaryColor};
-                        margin: 0 0 15px 0;
-                        font-size: 42px;
+                        margin: 0 0 12px 0;
+                        font-size: 36px;
                         font-weight: 900;
                         line-height: 1.1;
                         text-transform: uppercase;
                         letter-spacing: -1px;
                     ">${texts.mainTitle}</h1>
                     
-                    <div style="width: 80px; height: 5px; background: ${primaryColor}; margin: 0 auto 20px auto; border-radius: 10px;"></div>
+                    <div style="width: 60px; height: 4px; background: ${primaryColor}; margin: 0 auto 15px auto; border-radius: 10px;"></div>
                     
                     <p style="
                         color: ${secondaryColor};
-                        font-size: 18px;
+                        font-size: 16px;
                         font-weight: 700;
                         margin: 0;
                         text-transform: uppercase;
@@ -270,23 +270,23 @@ export const generateEventRedirectQRCode = async (
             <div style="
                 background: ${primaryColor};
                 color: white;
-                padding: 25px 30px;
-                border-radius: 20px;
+                padding: 20px 25px;
+                border-radius: 18px;
                 text-align: center;
                 position: relative;
                 z-index: 1;
                 box-shadow: 0 8px 30px rgba(0,74,153,0.25);
             ">
                 <p style="
-                    font-size: 11px;
+                    font-size: 10px;
                     font-weight: 900;
                     text-transform: uppercase;
-                    letter-spacing: 3px;
-                    margin: 0 0 10px 0;
+                    letter-spacing: 2px;
+                    margin: 0 0 8px 0;
                     opacity: 0.7;
                 ">Nome do Evento</p>
                 <h2 style="
-                    font-size: 26px;
+                    font-size: 22px;
                     font-weight: 900;
                     margin: 0;
                     line-height: 1.3;
@@ -296,8 +296,8 @@ export const generateEventRedirectQRCode = async (
             <!-- QR Code Section -->
             <div style="
                 background: white;
-                padding: 35px;
-                border-radius: 30px;
+                padding: 25px;
+                border-radius: 25px;
                 text-align: center;
                 position: relative;
                 z-index: 1;
@@ -306,10 +306,10 @@ export const generateEventRedirectQRCode = async (
             ">
                 <p style="
                     color: #64748b;
-                    font-size: 16px;
+                    font-size: 14px;
                     font-weight: 600;
-                    margin: 0 0 30px 0;
-                    line-height: 1.6;
+                    margin: 0 0 20px 0;
+                    line-height: 1.5;
                     max-width: 450px;
                     margin-left: auto;
                     margin-right: auto;
@@ -317,26 +317,26 @@ export const generateEventRedirectQRCode = async (
 
                 <div style="
                     display: inline-block;
-                    padding: 25px;
+                    padding: 20px;
                     background: white;
-                    border: 5px solid ${primaryColor};
-                    border-radius: 25px;
+                    border: 4px solid ${primaryColor};
+                    border-radius: 20px;
                     box-shadow: 0 10px 40px rgba(0,74,153,0.2);
                 ">
                     <img src="${qrCodeDataUrl}" style="
-                        width: 280px;
-                        height: 280px;
+                        width: 240px;
+                        height: 240px;
                         display: block;
                     " />
                 </div>
 
                 <p style="
                     color: ${primaryColor};
-                    font-size: 13px;
+                    font-size: 12px;
                     font-weight: 900;
-                    margin: 25px 0 0 0;
+                    margin: 20px 0 0 0;
                     text-transform: uppercase;
-                    letter-spacing: 2px;
+                    letter-spacing: 1.5px;
                 ">📱 Escaneie com a Câmera do Celular</p>
             </div>
 
@@ -350,26 +350,26 @@ export const generateEventRedirectQRCode = async (
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    gap: 15px;
-                    margin-bottom: 15px;
+                    gap: 12px;
+                    margin-bottom: 12px;
                 ">
                     <div style="flex: 1; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}44, transparent);"></div>
                     <div style="
                         background: ${primaryColor};
                         color: white;
-                        padding: 8px 20px;
-                        border-radius: 20px;
-                        font-size: 12px;
+                        padding: 6px 18px;
+                        border-radius: 18px;
+                        font-size: 11px;
                         font-weight: 900;
                         text-transform: uppercase;
-                        letter-spacing: 1px;
+                        letter-spacing: 0.5px;
                     ">${texts.footer}</div>
                     <div style="flex: 1; height: 2px; background: linear-gradient(to left, transparent, ${primaryColor}44, transparent);"></div>
                 </div>
 
                 <p style="
                     color: #94a3b8;
-                    font-size: 10px;
+                    font-size: 9px;
                     font-weight: 600;
                     margin: 0;
                     line-height: 1.5;
