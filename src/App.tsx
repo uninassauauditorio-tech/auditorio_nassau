@@ -28,7 +28,7 @@ const App: React.FC = () => {
             <Route path="/" element={<PublicEventList eventos={store.eventos} />} />
             <Route
               path="/evento/:id"
-              element={<PublicEventRegistration eventos={store.eventos} onRegister={store.registrarInscrito} />}
+              element={<PublicEventRegistration eventos={store.eventos} isLoading={store.isLoading} onRegister={store.registrarInscrito} />}
             />
             <Route
               path="/checkin"
@@ -53,7 +53,7 @@ const App: React.FC = () => {
                       <Route path="arquivo" element={<AdminArchive eventos={store.eventos} />} />
                       <Route path="novo" element={<AdminEventForm onSave={store.addEvento} onUpload={store.uploadImage} />} />
                       <Route path="evento/:id" element={<AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onDeleteRegistration={store.deleteInscrito} onCheckin={store.validateCheckin} />} />
-                      <Route path="evento/:id/editar" element={<AdminEventEditWrapper eventos={store.eventos} onSave={store.updateEvento} onUpload={store.uploadImage} />} />
+                      <Route path="evento/:id/editar" element={<AdminEventEditWrapper eventos={store.eventos} isLoading={store.isLoading} onSave={store.updateEvento} onUpload={store.uploadImage} />} />
                       <Route path="documentacao" element={<AdminDocumentation />} />
                     </Routes>
                   </SignedIn>
@@ -74,9 +74,18 @@ const App: React.FC = () => {
   );
 };
 
-const AdminEventEditWrapper: React.FC<{ eventos: any[], onSave: (evento: any) => void, onUpload: (file: File) => Promise<string> }> = ({ eventos, onSave, onUpload }) => {
+const AdminEventEditWrapper: React.FC<{ eventos: any[], isLoading: boolean, onSave: (evento: any) => void, onUpload: (file: File) => Promise<string> }> = ({ eventos, isLoading, onSave, onUpload }) => {
   const { id } = useParams<{ id: string }>();
   const evento = eventos.find(e => e.id === id);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[40vh] flex flex-col items-center justify-center animate-pulse">
+        <div className="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Carregando Evento...</p>
+      </div>
+    );
+  }
 
   if (!evento) return <div className="text-center py-20 font-bold text-gray-400">Evento não localizado.</div>;
 

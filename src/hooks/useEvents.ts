@@ -8,15 +8,19 @@ export const useStore = () => {
   const { signOut } = useAuth();
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [authReady, setAuthReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadEvents = async () => {
     try {
+      setIsLoading(true);
       console.log('[DATA] Fetching events from Supabase...');
       const data = await eventService.getEvents();
       console.log(`[DATA] ${data.length} events loaded.`);
       setEventos(data);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -87,6 +91,7 @@ export const useStore = () => {
 
   return {
     eventos,
+    isLoading,
     isAdmin: !!isSignedIn,
     authReady,
     user,

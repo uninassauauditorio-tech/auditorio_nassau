@@ -13,6 +13,7 @@ import AlertDialog from '../../components/ui/AlertDialog';
 
 interface PublicEventRegistrationProps {
   eventos: Evento[];
+  isLoading?: boolean;
   onRegister: (eventoId: string, inscrito: Omit<Inscrito, 'id' | 'dataInscricao'>) => Promise<Inscrito>;
 }
 
@@ -32,12 +33,14 @@ const COURSES = [
   "TERAPIA OCUPACIONAL"
 ];
 
-const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ eventos, onRegister }) => {
+const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ eventos, isLoading, onRegister }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const evento = eventos.find(e => e.id === id);
 
   const [formData, setFormData] = useState({
+    // ... rest of state stays same ...
+
     nomeCompleto: '',
     telefone: '',
     cpf: '',
@@ -100,6 +103,39 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
     (showHigherInterest && formData.interesseTipo === 'Segunda Graduação') ||
     (showHigherInterest && formData.interesseTipo === 'Pós-graduação');
 
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      interesseGraduacao: '',
+      interesseTipo: '',
+      cursoInteresse: ''
+    }));
+  }, [formData.escolaridade]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center animate-pulse">
+        <div className="size-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Carregando Informações...</p>
+      </div>
+    );
+  }
+
+  if (!evento || evento.encerrado) {
+    return (
+      <div className="max-w-md mx-auto text-center py-32 animate-in text-gray-900 px-4">
+        <div className="size-20 bg-gray-100 text-gray-400 rounded-3xl flex items-center justify-center mx-auto mb-6">
+          <span className="material-symbols-outlined text-4xl">event_busy</span>
+        </div>
+        <h2 className="text-2xl font-black mb-2">Evento Não Disponível</h2>
+        <p className="text-gray-500 mb-8 px-4">Este evento já foi encerrado ou não permite novas confirmações de presença.</p>
+        <Link to="/" className="bg-primary text-white px-8 py-3 rounded-2xl font-black hover:bg-primary-dark transition-all inline-block shadow-lg shadow-primary/20">
+          Ver Outros Eventos
+        </Link>
+      </div>
+    );
+  }
+
   const isExterno = evento.tipo === 'externo';
 
   const isFormValid = isExterno
@@ -116,29 +152,6 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
       (!showHigherInterest || formData.interesseTipo !== '') &&
       (!showCourseField || formData.cursoInteresse !== ''));
 
-  useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      interesseGraduacao: '',
-      interesseTipo: '',
-      cursoInteresse: ''
-    }));
-  }, [formData.escolaridade]);
-
-  if (!evento || evento.encerrado) {
-    return (
-      <div className="max-w-md mx-auto text-center py-32 animate-in">
-        <div className="size-20 bg-gray-100 text-gray-400 rounded-3xl flex items-center justify-center mx-auto mb-6">
-          <span className="material-symbols-outlined text-4xl">event_busy</span>
-        </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-2">Evento Não Disponível</h2>
-        <p className="text-gray-500 mb-8 px-4">Este evento já foi encerrado ou não permite novas confirmações de presença.</p>
-        <Link to="/" className="bg-primary text-white px-8 py-3 rounded-2xl font-black hover:bg-primary-dark transition-all inline-block shadow-lg shadow-primary/20">
-          Ver Outros Eventos
-        </Link>
-      </div>
-    );
-  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
