@@ -1,88 +1,45 @@
 import { useState, useEffect } from 'react';
+import { useUser, useAuth } from '@clerk/clerk-react';
 import { Evento, Inscrito } from '../types';
 import { eventService } from '../services/factory';
-import { authService } from '../services/auth';
 
 export const useStore = () => {
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut } = useAuth();
   const [eventos, setEventos] = useState<Evento[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [authReady, setAuthReady] = useState(false); // ✅ NEW: Auth initialization state
+  const [authReady, setAuthReady] = useState(false);
 
   const loadEvents = async () => {
     try {
+      console.log('[DATA] Fetching events from Supabase...');
       const data = await eventService.getEvents();
+      console.log(`[DATA] ${data.length} events loaded.`);
       setEventos(data);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
     }
   };
 
-  // ✅ CRITICAL: Single source of truth for auth initialization
+  // ✅ Sync authReady with Clerk's isLoaded
   useEffect(() => {
-    let subscription: any;
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        console.log('[AUTH] Starting authentication initialization...');
-
-        // STEP 1: Wait for session to be fully resolved
-        const session = await authService.getSession();
-
-        if (!mounted) return;
-
-        // STEP 2: Set admin state based on session
-        setIsAdmin(!!session);
-        console.log('[AUTH] Session resolved:', !!session);
-
-        // STEP 3: Mark auth as ready BEFORE loading data
-        setAuthReady(true);
-        console.log('[AUTH] Auth system ready');
-
-        // STEP 4: Setup auth state listener
-        const { data } = authService.onAuthStateChange((newSession) => {
-          if (!mounted) return;
-          setIsAdmin(!!newSession);
-          console.log('[AUTH] Auth state changed:', !!newSession);
-        });
-
-        subscription = data?.subscription;
-      } catch (e) {
-        console.error('[AUTH] Error during initialization:', e);
-        // Even on error, mark as ready to prevent infinite loading
-        if (mounted) setAuthReady(true);
-      }
-    };
-
-    initializeAuth();
-
-    return () => {
-      mounted = false;
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
-  }, []); // ✅ Run only once on mount
-
-  // ✅ CRITICAL: Load events ONLY after auth is ready
-  useEffect(() => {
-    if (!authReady) {
-      console.log('[DATA] Waiting for auth to be ready...');
-      return;
+    if (isLoaded) {
+      setAuthReady(true);
     }
+  }, [isLoaded]);
 
-    console.log('[DATA] Auth ready, loading events...');
-    loadEvents();
-  }, [authReady]); // ✅ Dependency on authReady ensures proper sequence
+  // ✅ Load events when auth is ready (even if not signed in, for public view)
+  useEffect(() => {
+    if (authReady) {
+      loadEvents();
+    }
+  }, [authReady]);
 
   const login = () => {
-    // Login logic is now handled in AdminLogin.tsx via authService
-    setIsAdmin(true);
+    // Handled by Clerk UI
   };
 
   const logout = async () => {
-    await authService.logout();
-    setIsAdmin(false);
+    await signOut();
   };
 
   const addEvento = async (evento: Omit<Evento, 'id' | 'inscritos' | 'encerrado'>) => {
@@ -130,8 +87,9 @@ export const useStore = () => {
 
   return {
     eventos,
-    isAdmin,
-    authReady, // ✅ NEW: Expose authReady to components
+    isAdmin: !!isSignedIn,
+    authReady,
+    user,
     login,
     logout,
     addEvento,

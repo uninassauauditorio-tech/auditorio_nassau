@@ -4,7 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Evento, Inscrito } from '../../types';
 import { Table, Column } from '../../components/ui/Table';
 import { exportToXLSX } from '../../utils/export';
-import { generateReceipt } from '../../utils/receipt';
+import { generateReceipt, generateEventRedirectQRCode } from '../../utils/receipt';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import AlertDialog from '../../components/ui/AlertDialog';
 
@@ -348,6 +348,13 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
               Encerrar Evento
             </button>
           )}
+          <button
+            onClick={() => generateEventRedirectQRCode(evento)}
+            className="col-span-2 sm:col-auto bg-primary text-white border-2 border-primary px-4 md:px-5 py-2.5 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/10"
+          >
+            <span className="material-symbols-outlined text-lg">qr_code_2</span>
+            QR Inscrição
+          </button>
           <button
             onClick={handleDelete}
             className="col-span-2 sm:col-auto bg-red-600 text-white border-2 border-red-600 px-4 md:px-5 py-2.5 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-colors flex items-center justify-center gap-2"

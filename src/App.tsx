@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import { useStore } from './hooks/useEvents';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -18,22 +18,10 @@ import TutorialPage from './pages/Public/TutorialPage';
 const App: React.FC = () => {
   const store = useStore();
 
-  // ✅ CRITICAL: Wait for auth to be ready before rendering routes
-  if (!store.authReady) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-secondary">
-        <div className="text-center">
-          <div className="size-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500 font-bold">Inicializando sistema...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <HashRouter>
       <div className="flex flex-col min-h-screen">
-        <Header isAdmin={store.isAdmin} onLogout={store.logout} />
+        <Header />
         <main className="flex-grow">
           <Routes>
             {/* Public Routes */}
@@ -51,40 +39,29 @@ const App: React.FC = () => {
               element={<TutorialPage />}
             />
 
-            {/* Admin Routes */}
-            <Route
-              path="/admin/login"
-              element={store.isAdmin ? <Navigate to="/admin" /> : <AdminLogin onLogin={store.login} />}
-            />
+            {/* Custom Admin Login Route */}
+            <Route path="/admin/login" element={<AdminLogin />} />
 
+            {/* Protected Admin Routes */}
             <Route
-              path="/admin"
-              element={store.isAdmin ? <AdminDashboard eventos={store.eventos} /> : <Navigate to="/admin/login" />}
-            />
-
-            <Route
-              path="/admin/arquivo"
-              element={store.isAdmin ? <AdminArchive eventos={store.eventos} /> : <Navigate to="/admin/login" />}
-            />
-
-            <Route
-              path="/admin/novo"
-              element={store.isAdmin ? <AdminEventForm onSave={store.addEvento} onUpload={store.uploadImage} /> : <Navigate to="/admin/login" />}
-            />
-
-            <Route
-              path="/admin/evento/:id"
-              element={store.isAdmin ? <AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onDeleteRegistration={store.deleteInscrito} onCheckin={store.validateCheckin} /> : <Navigate to="/admin/login" />}
-            />
-
-            <Route
-              path="/admin/evento/:id/editar"
-              element={store.isAdmin ? <AdminEventEditWrapper eventos={store.eventos} onSave={store.updateEvento} onUpload={store.uploadImage} /> : <Navigate to="/admin/login" />}
-            />
-
-            <Route
-              path="/admin/documentacao"
-              element={store.isAdmin ? <AdminDocumentation /> : <Navigate to="/admin/login" />}
+              path="/admin/*"
+              element={
+                <>
+                  <SignedIn>
+                    <Routes>
+                      <Route index element={<AdminDashboard eventos={store.eventos} />} />
+                      <Route path="arquivo" element={<AdminArchive eventos={store.eventos} />} />
+                      <Route path="novo" element={<AdminEventForm onSave={store.addEvento} onUpload={store.uploadImage} />} />
+                      <Route path="evento/:id" element={<AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onDeleteRegistration={store.deleteInscrito} onCheckin={store.validateCheckin} />} />
+                      <Route path="evento/:id/editar" element={<AdminEventEditWrapper eventos={store.eventos} onSave={store.updateEvento} onUpload={store.uploadImage} />} />
+                      <Route path="documentacao" element={<AdminDocumentation />} />
+                    </Routes>
+                  </SignedIn>
+                  <SignedOut>
+                    <Navigate to="/admin/login" replace />
+                  </SignedOut>
+                </>
+              }
             />
 
             {/* Catch All */}
