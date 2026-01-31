@@ -153,66 +153,230 @@ const generateCertificate = async (evento: Evento, inscrito: Inscrito, onSuccess
     await downloadContainerAsImage(container, `certificado-${inscrito.nomeCompleto.toLowerCase().replace(/\s+/g, '-')}`, onSuccess);
 };
 
-export const generateEventRedirectQRCode = async (evento: Evento, onSuccess?: () => void) => {
+export const generateEventRedirectQRCode = async (
+    evento: Evento,
+    customTexts?: {
+        mainTitle?: string;
+        subtitle?: string;
+        instruction?: string;
+        footer?: string;
+    },
+    onSuccess?: () => void
+) => {
     const primaryColor = '#004a99';
     const secondaryColor = '#333333';
 
-    // Construct the registration URL
-    // We use the current window location to get the base URL, but we need to handle the hash router
-    const baseUrl = window.location.origin + window.location.pathname;
-    const registrationUrl = `${baseUrl}#/evento/${evento.id}`;
+    // Construct the registration URL - Use production URL if available
+    const productionUrl = import.meta.env.VITE_PRODUCTION_URL;
+    const baseUrl = productionUrl || (window.location.origin + window.location.pathname);
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    const registrationUrl = `${cleanBaseUrl}#/evento/${evento.id}`;
 
-    // Generate QR Code
+    console.log('Generated QR Code URL:', registrationUrl); // Debug log
+
+    // Default texts (editable)
+    const texts = {
+        mainTitle: customTexts?.mainTitle || 'Faça sua Inscrição Online!',
+        subtitle: customTexts?.subtitle || 'Evento UNINASSAU',
+        instruction: customTexts?.instruction || 'Aponte a câmera do seu celular para o QR Code e se inscreva em segundos. Rápido, fácil e seguro!',
+        footer: customTexts?.footer || 'Inscrições gratuitas • Vagas limitadas • Garanta sua presença'
+    };
+
+    // Generate QR Code with higher resolution
     const qrCodeDataUrl = await QRCode.toDataURL(registrationUrl, {
-        margin: 1,
-        width: 600,
+        margin: 2,
+        width: 800,
         color: {
             dark: primaryColor,
             light: '#ffffff'
-        }
+        },
+        errorCorrectionLevel: 'H'
     });
 
     const container = document.createElement('div');
+    // A4 Portrait: 210mm x 297mm = 595px x 842px at 72 DPI
     container.style.cssText = `
         width: 595px;
-        min-height: 842px;
+        height: 842px;
         background: white;
         position: absolute;
         left: -9999px;
-        font-family: 'Inter', Arial, sans-serif;
-        padding: 60px 40px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        padding: 0;
+        margin: 0;
         box-sizing: border-box;
     `;
 
     container.innerHTML = `
-        <div style="border: 8px solid ${primaryColor}; border-radius: 40px; padding: 40px; min-height: 720px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: #fff;">
-            
-            <img src="${logo}" style="height: 80px; margin-bottom: 40px;" />
-            
-            <h1 style="color: ${secondaryColor}; margin: 0; font-size: 32px; font-weight: 900; line-height: 1.2; text-transform: uppercase; letter-spacing: -1px;">
-                Faça sua Inscrição Agora!
-            </h1>
-            
-            <div style="width: 60px; height: 4px; background: ${primaryColor}; margin: 25px auto;"></div>
-            
-            <p style="color: #64748b; font-size: 16px; font-weight: 600; margin: 0 0 40px 0; max-width: 400px;">
-                Aponte a câmera do seu celular para o QR Code abaixo e registre sua participação no evento:
-            </p>
+        <div style="
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            padding: 50px 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        ">
+            <!-- Background Pattern -->
+            <div style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                opacity: 0.03;
+                background-image: repeating-linear-gradient(45deg, ${primaryColor} 0px, ${primaryColor} 2px, transparent 2px, transparent 10px);
+                pointer-events: none;
+            "></div>
 
-            <h2 style="color: ${primaryColor}; font-size: 24px; font-weight: 900; margin-bottom: 40px; padding: 0 20px;">
-                ${evento.nome}
-            </h2>
-
-            <div style="padding: 20px; border: 4px solid ${primaryColor}11; border-radius: 30px; background: #f8fafc; margin-bottom: 40px;">
-                <img src="${qrCodeDataUrl}" style="width: 320px; height: 320px; display: block; border-radius: 10px;" />
+            <!-- Header -->
+            <div style="text-align: center; position: relative; z-index: 1;">
+                <img src="${logo}" style="height: 90px; margin-bottom: 30px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" />
+                
+                <div style="
+                    background: white;
+                    border: 6px solid ${primaryColor};
+                    border-radius: 30px;
+                    padding: 30px 40px;
+                    box-shadow: 0 10px 40px rgba(0,74,153,0.15);
+                ">
+                    <h1 style="
+                        color: ${primaryColor};
+                        margin: 0 0 15px 0;
+                        font-size: 42px;
+                        font-weight: 900;
+                        line-height: 1.1;
+                        text-transform: uppercase;
+                        letter-spacing: -1px;
+                    ">${texts.mainTitle}</h1>
+                    
+                    <div style="width: 80px; height: 5px; background: ${primaryColor}; margin: 0 auto 20px auto; border-radius: 10px;"></div>
+                    
+                    <p style="
+                        color: ${secondaryColor};
+                        font-size: 18px;
+                        font-weight: 700;
+                        margin: 0;
+                        text-transform: uppercase;
+                        letter-spacing: 2px;
+                    ">${texts.subtitle}</p>
+                </div>
             </div>
 
-            <div style="display: flex; items-center; gap: 10px; color: ${primaryColor}; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
-                <span>Rápido</span>
-                <span style="color: #cbd5e1">•</span>
-                <span>Prático</span>
-                <span style="color: #cbd5e1">•</span>
-                <span>Digital</span>
+            <!-- Event Name -->
+            <div style="
+                background: ${primaryColor};
+                color: white;
+                padding: 25px 30px;
+                border-radius: 20px;
+                text-align: center;
+                position: relative;
+                z-index: 1;
+                box-shadow: 0 8px 30px rgba(0,74,153,0.25);
+            ">
+                <p style="
+                    font-size: 11px;
+                    font-weight: 900;
+                    text-transform: uppercase;
+                    letter-spacing: 3px;
+                    margin: 0 0 10px 0;
+                    opacity: 0.7;
+                ">Nome do Evento</p>
+                <h2 style="
+                    font-size: 26px;
+                    font-weight: 900;
+                    margin: 0;
+                    line-height: 1.3;
+                ">${evento.nome}</h2>
+            </div>
+
+            <!-- QR Code Section -->
+            <div style="
+                background: white;
+                padding: 35px;
+                border-radius: 30px;
+                text-align: center;
+                position: relative;
+                z-index: 1;
+                box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+                border: 3px solid #f1f5f9;
+            ">
+                <p style="
+                    color: #64748b;
+                    font-size: 16px;
+                    font-weight: 600;
+                    margin: 0 0 30px 0;
+                    line-height: 1.6;
+                    max-width: 450px;
+                    margin-left: auto;
+                    margin-right: auto;
+                ">${texts.instruction}</p>
+
+                <div style="
+                    display: inline-block;
+                    padding: 25px;
+                    background: white;
+                    border: 5px solid ${primaryColor};
+                    border-radius: 25px;
+                    box-shadow: 0 10px 40px rgba(0,74,153,0.2);
+                ">
+                    <img src="${qrCodeDataUrl}" style="
+                        width: 280px;
+                        height: 280px;
+                        display: block;
+                    " />
+                </div>
+
+                <p style="
+                    color: ${primaryColor};
+                    font-size: 13px;
+                    font-weight: 900;
+                    margin: 25px 0 0 0;
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                ">📱 Escaneie com a Câmera do Celular</p>
+            </div>
+
+            <!-- Footer -->
+            <div style="
+                text-align: center;
+                position: relative;
+                z-index: 1;
+            ">
+                <div style="
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 15px;
+                    margin-bottom: 15px;
+                ">
+                    <div style="flex: 1; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}44, transparent);"></div>
+                    <div style="
+                        background: ${primaryColor};
+                        color: white;
+                        padding: 8px 20px;
+                        border-radius: 20px;
+                        font-size: 12px;
+                        font-weight: 900;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                    ">${texts.footer}</div>
+                    <div style="flex: 1; height: 2px; background: linear-gradient(to left, transparent, ${primaryColor}44, transparent);"></div>
+                </div>
+
+                <p style="
+                    color: #94a3b8;
+                    font-size: 10px;
+                    font-weight: 600;
+                    margin: 0;
+                    line-height: 1.5;
+                ">
+                    Sistema de Gestão de Eventos UNINASSAU<br/>
+                    ${new Date(evento.data).toLocaleDateString('pt-BR')} às ${evento.horario} • ${evento.local}
+                </p>
             </div>
         </div>
     `;

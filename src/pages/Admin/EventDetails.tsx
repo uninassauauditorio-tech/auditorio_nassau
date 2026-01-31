@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Evento, Inscrito } from '../../types';
@@ -7,6 +8,7 @@ import { exportToXLSX } from '../../utils/export';
 import { generateReceipt, generateEventRedirectQRCode } from '../../utils/receipt';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import AlertDialog from '../../components/ui/AlertDialog';
+import QRCodeEditorModal from '../../components/QRCodeEditorModal';
 
 interface AdminEventDetailsProps {
   eventos: Evento[];
@@ -53,6 +55,8 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
     message: '',
     type: 'info'
   });
+
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   const filteredInscritos = useMemo(() => {
     if (!evento) return [];
@@ -349,7 +353,7 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
             </button>
           )}
           <button
-            onClick={() => generateEventRedirectQRCode(evento)}
+            onClick={() => setIsQRModalOpen(true)}
             className="col-span-2 sm:col-auto bg-primary text-white border-2 border-primary px-4 md:px-5 py-2.5 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/10"
           >
             <span className="material-symbols-outlined text-lg">qr_code_2</span>
@@ -573,6 +577,15 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type}
+      />
+
+      <QRCodeEditorModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+        onGenerate={(texts) => {
+          generateEventRedirectQRCode(evento, texts);
+        }}
+        eventName={evento.nome}
       />
     </div>
   );
