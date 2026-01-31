@@ -164,15 +164,16 @@ export const generateEventRedirectQRCode = async (
     onSuccess?: () => void
 ) => {
     const primaryColor = '#004a99';
+    const primaryColorRGB = { r: 0, g: 74, b: 153 }; // RGB for jsPDF
     const secondaryColor = '#333333';
 
-    // Construct the registration URL - Use production URL if available
+    // Construct the registration URL
     const productionUrl = import.meta.env.VITE_PRODUCTION_URL;
     const baseUrl = productionUrl || (window.location.origin + window.location.pathname);
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
     const registrationUrl = `${cleanBaseUrl}#/evento/${evento.id}`;
 
-    console.log('Generated QR Code URL:', registrationUrl); // Debug log
+    console.log('🔗 Generated QR Code URL:', registrationUrl);
 
     // Default texts (editable)
     const texts = {
@@ -182,220 +183,148 @@ export const generateEventRedirectQRCode = async (
         footer: customTexts?.footer || 'Inscrições gratuitas • Vagas limitadas • Garanta sua presença'
     };
 
-    // Generate QR Code with higher resolution - using canvas for better html2canvas compatibility
-    const qrCanvas = document.createElement('canvas');
-    await QRCode.toCanvas(qrCanvas, registrationUrl, {
-        margin: 2,
-        width: 800,
-        color: {
-            dark: primaryColor,
-            light: '#ffffff'
-        },
-        errorCorrectionLevel: 'H'
-    });
+    try {
+        // Generate QR Code as data URL
+        const qrCodeDataUrl = await QRCode.toDataURL(registrationUrl, {
+            margin: 1,
+            width: 600,
+            color: {
+                dark: primaryColor,
+                light: '#ffffff'
+            },
+            errorCorrectionLevel: 'H'
+        });
 
-    // Convert canvas to data URL for embedding
-    const qrCodeDataUrl = qrCanvas.toDataURL('image/png');
+        console.log('✅ QR Code gerado com sucesso!');
+        console.log('📊 Tamanho:', qrCodeDataUrl.length, 'caracteres');
 
-    console.log('✅ QR Code gerado para URL:', registrationUrl);
-    console.log('📊 Tamanho do QR Code (base64):', qrCodeDataUrl.length, 'caracteres');
+        // Create PDF (A4 Portrait: 210mm x 297mm)
+        const { jsPDF } = await import('jspdf');
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
 
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const margin = 15;
 
+        // Background gradient (simulate with rectangles)
+        doc.setFillColor(248, 250, 252);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
-    const container = document.createElement('div');
-    // A4 Portrait: 210mm x 297mm = 595px x 842px at 72 DPI
-    container.style.cssText = `
-        width: 595px;
-        height: 842px;
-        background: white;
-        position: absolute;
-        left: -9999px;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        padding: 0;
-        margin: 0;
-        box-sizing: border-box;
-    `;
+        // Logo
+        try {
+            doc.addImage(logo, 'PNG', pageWidth / 2 - 15, margin, 30, 12);
+        } catch (e) {
+            console.warn('Logo não carregado:', e);
+        }
 
-    container.innerHTML = `
-        <div style="
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            padding: 35px 30px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        ">
-            <!-- Background Pattern -->
-            <div style="
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                opacity: 0.03;
-                background-image: repeating-linear-gradient(45deg, ${primaryColor} 0px, ${primaryColor} 2px, transparent 2px, transparent 10px);
-                pointer-events: none;
-            "></div>
+        let yPos = margin + 20;
 
-            <!-- Header -->
-            <div style="text-align: center; position: relative; z-index: 1;">
-                <img src="${logo}" style="height: 70px; margin-bottom: 25px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));" />
-                
-                <div style="
-                    background: white;
-                    border: 5px solid ${primaryColor};
-                    border-radius: 25px;
-                    padding: 25px 30px;
-                    box-shadow: 0 10px 40px rgba(0,74,153,0.15);
-                ">
-                    <h1 style="
-                        color: ${primaryColor};
-                        margin: 0 0 12px 0;
-                        font-size: 36px;
-                        font-weight: 900;
-                        line-height: 1.1;
-                        text-transform: uppercase;
-                        letter-spacing: -1px;
-                    ">${texts.mainTitle}</h1>
-                    
-                    <div style="width: 60px; height: 4px; background: ${primaryColor}; margin: 0 auto 15px auto; border-radius: 10px;"></div>
-                    
-                    <p style="
-                        color: ${secondaryColor};
-                        font-size: 16px;
-                        font-weight: 700;
-                        margin: 0;
-                        text-transform: uppercase;
-                        letter-spacing: 2px;
-                    ">${texts.subtitle}</p>
-                </div>
-            </div>
+        // Main Title Box
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(primaryColorRGB.r, primaryColorRGB.g, primaryColorRGB.b);
+        doc.setLineWidth(1.5);
+        const titleBoxHeight = 35;
+        doc.roundedRect(margin, yPos, pageWidth - 2 * margin, titleBoxHeight, 5, 5, 'FD');
 
-            <!-- Event Name -->
-            <div style="
-                background: ${primaryColor};
-                color: white;
-                padding: 20px 25px;
-                border-radius: 18px;
-                text-align: center;
-                position: relative;
-                z-index: 1;
-                box-shadow: 0 8px 30px rgba(0,74,153,0.25);
-            ">
-                <p style="
-                    font-size: 10px;
-                    font-weight: 900;
-                    text-transform: uppercase;
-                    letter-spacing: 2px;
-                    margin: 0 0 8px 0;
-                    opacity: 0.7;
-                ">Nome do Evento</p>
-                <h2 style="
-                    font-size: 22px;
-                    font-weight: 900;
-                    margin: 0;
-                    line-height: 1.3;
-                ">${evento.nome}</h2>
-            </div>
+        // Main Title
+        doc.setTextColor(primaryColorRGB.r, primaryColorRGB.g, primaryColorRGB.b);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        const titleLines = doc.splitTextToSize(texts.mainTitle.toUpperCase(), pageWidth - 2 * margin - 10);
+        doc.text(titleLines, pageWidth / 2, yPos + 12, { align: 'center' });
 
-            <!-- QR Code Section -->
-            <div style="
-                background: white;
-                padding: 25px;
-                border-radius: 25px;
-                text-align: center;
-                position: relative;
-                z-index: 1;
-                box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-                border: 3px solid #f1f5f9;
-            ">
-                <p style="
-                    color: #64748b;
-                    font-size: 14px;
-                    font-weight: 600;
-                    margin: 0 0 20px 0;
-                    line-height: 1.5;
-                    max-width: 450px;
-                    margin-left: auto;
-                    margin-right: auto;
-                ">${texts.instruction}</p>
+        // Divider
+        doc.setFillColor(primaryColorRGB.r, primaryColorRGB.g, primaryColorRGB.b);
+        doc.rect(pageWidth / 2 - 10, yPos + 18, 20, 1, 'F');
 
-                <div style="
-                    display: inline-block;
-                    padding: 20px;
-                    background: white;
-                    border: 4px solid ${primaryColor};
-                    border-radius: 20px;
-                    box-shadow: 0 10px 40px rgba(0,74,153,0.2);
-                ">
-                    <img 
-                        src="${qrCodeDataUrl}" 
-                        alt="QR Code de Inscrição"
-                        crossorigin="anonymous"
-                        style="
-                            width: 240px;
-                            height: 240px;
-                            display: block;
-                        " 
-                    />
-                </div>
+        // Subtitle
+        doc.setFontSize(11);
+        doc.setTextColor(51, 51, 51);
+        doc.text(texts.subtitle.toUpperCase(), pageWidth / 2, yPos + 26, { align: 'center' });
 
-                <p style="
-                    color: ${primaryColor};
-                    font-size: 12px;
-                    font-weight: 900;
-                    margin: 20px 0 0 0;
-                    text-transform: uppercase;
-                    letter-spacing: 1.5px;
-                ">📱 Escaneie com a Câmera do Celular</p>
-            </div>
+        yPos += titleBoxHeight + 10;
 
-            <!-- Footer -->
-            <div style="
-                text-align: center;
-                position: relative;
-                z-index: 1;
-            ">
-                <div style="
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 12px;
-                    margin-bottom: 12px;
-                ">
-                    <div style="flex: 1; height: 2px; background: linear-gradient(to right, transparent, ${primaryColor}44, transparent);"></div>
-                    <div style="
-                        background: ${primaryColor};
-                        color: white;
-                        padding: 6px 18px;
-                        border-radius: 18px;
-                        font-size: 11px;
-                        font-weight: 900;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                    ">${texts.footer}</div>
-                    <div style="flex: 1; height: 2px; background: linear-gradient(to left, transparent, ${primaryColor}44, transparent);"></div>
-                </div>
+        // Event Name Box
+        doc.setFillColor(primaryColorRGB.r, primaryColorRGB.g, primaryColorRGB.b);
+        doc.roundedRect(margin, yPos, pageWidth - 2 * margin, 22, 4, 4, 'F');
 
-                <p style="
-                    color: #94a3b8;
-                    font-size: 9px;
-                    font-weight: 600;
-                    margin: 0;
-                    line-height: 1.5;
-                ">
-                    Sistema de Gestão de Eventos UNINASSAU<br/>
-                    ${new Date(evento.data).toLocaleDateString('pt-BR')} às ${evento.horario} • ${evento.local}
-                </p>
-            </div>
-        </div>
-    `;
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('NOME DO EVENTO', pageWidth / 2, yPos + 6, { align: 'center' });
 
-    await downloadContainerAsImage(container, `qrcode-inscricao-${evento.nome.toLowerCase().replace(/\s+/g, '-')}`, onSuccess);
+        doc.setFontSize(14);
+        const eventLines = doc.splitTextToSize(evento.nome, pageWidth - 2 * margin - 10);
+        doc.text(eventLines, pageWidth / 2, yPos + 12, { align: 'center' });
+
+        yPos += 28;
+
+        // QR Code Section Box
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(241, 245, 249);
+        doc.setLineWidth(0.8);
+        const qrBoxHeight = 110;
+        doc.roundedRect(margin, yPos, pageWidth - 2 * margin, qrBoxHeight, 5, 5, 'FD');
+
+        // Instruction text
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        const instrLines = doc.splitTextToSize(texts.instruction, pageWidth - 2 * margin - 20);
+        doc.text(instrLines, pageWidth / 2, yPos + 8, { align: 'center', maxWidth: pageWidth - 2 * margin - 20 });
+
+        // QR Code - THE IMPORTANT PART!
+        const qrSize = 65;
+        const qrX = pageWidth / 2 - qrSize / 2;
+        const qrY = yPos + 18;
+
+        // QR Code border
+        doc.setDrawColor(primaryColorRGB.r, primaryColorRGB.g, primaryColorRGB.b);
+        doc.setLineWidth(1);
+        doc.roundedRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 3, 3, 'D');
+
+        // Add QR Code image
+        doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+
+        // QR Code label
+        doc.setTextColor(primaryColorRGB.r, primaryColorRGB.g, primaryColorRGB.b);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('📱 ESCANEIE COM A CÂMERA DO CELULAR', pageWidth / 2, qrY + qrSize + 8, { align: 'center' });
+
+        yPos += qrBoxHeight + 8;
+
+        // Footer section
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(primaryColorRGB.r, primaryColorRGB.g, primaryColorRGB.b);
+        doc.text(texts.footer.toUpperCase(), pageWidth / 2, yPos + 5, { align: 'center' });
+
+        // Bottom info
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Sistema de Gestão de Eventos UNINASSAU', pageWidth / 2, yPos + 12, { align: 'center' });
+        const eventInfo = `${new Date(evento.data).toLocaleDateString('pt-BR')} às ${evento.horario} • ${evento.local}`;
+        doc.text(eventInfo, pageWidth / 2, yPos + 17, { align: 'center' });
+
+        // Save PDF
+        const fileName = `qrcode-inscricao-${evento.nome.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+        doc.save(fileName);
+
+        console.log('✅ PDF gerado com sucesso:', fileName);
+
+        if (onSuccess) {
+            setTimeout(onSuccess, 500);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao gerar PDF:', error);
+        alert('Erro ao gerar QR Code. Verifique o console para mais detalhes.');
+    }
 };
 
 const downloadContainerAsImage = async (container: HTMLElement, fileName: string, onSuccess?: () => void) => {
