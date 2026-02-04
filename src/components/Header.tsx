@@ -1,12 +1,15 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { UserButton, useUser, SignedIn, SignedOut } from '@clerk/clerk-react';
+import { LanguageSelector } from './LanguageSelector';
+import { useLanguage } from '../hooks/useLanguage';
 
 import logo from '../assets/img/logo.png';
 
 const Header: React.FC = () => {
   const location = useLocation();
   const { isSignedIn } = useUser();
+  const { t } = useLanguage();
 
   return (
     <header className="sticky top-0 z-50 no-print bg-white/30 backdrop-blur-md border-b border-white/20">
@@ -14,6 +17,10 @@ const Header: React.FC = () => {
         <Link to="/" className="flex items-center group">
           <img src={logo} alt="UNINASSAU" className="h-16 md:h-20 w-auto object-contain drop-shadow-sm" />
         </Link>
+
+        <div className="hidden md:block">
+          <LanguageSelector />
+        </div>
 
         <nav className="flex items-center gap-2">
           <SignedIn>
@@ -45,9 +52,12 @@ const Header: React.FC = () => {
               className="flex items-center gap-2 text-gray-400 hover:text-primary px-3 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-tighter"
             >
               <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
-              Administração
+              {t('Administração')}
             </Link>
           </SignedOut>
+          <div className="md:hidden">
+            <LanguageSelector />
+          </div>
         </nav>
       </div>
     </header>

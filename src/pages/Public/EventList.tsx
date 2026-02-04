@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Evento } from '../../types';
 import logo from '../../assets/img/logo.png';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface PublicEventListProps {
   eventos: Evento[];
 }
 
 const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
+  const { t, locale } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
@@ -70,13 +72,13 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
       >
         <div className="hero-overlay"></div>
         <div className="hero-content">
-          <h1 className="hero-title">Eventos UNINASSAU</h1>
+          <h1 className="hero-title">{t('hero_title')}</h1>
           <p className="hero-subtitle">
-            Confira a programação e confirme sua presença nos próximos eventos
+            {t('hero_subtitle')}
           </p>
           <div className="hero-scroll-indicator">
             <span className="hero-scroll-text">
-              Role para baixo para ver os eventos ativos e realizar sua inscrição
+              {t('hero_scroll_text')}
             </span>
             <span className="material-symbols-outlined text-3xl">expand_more</span>
           </div>
@@ -90,7 +92,7 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
             <input
               type="text"
-              placeholder="Pesquisar eventos por nome, descrição ou local..."
+              placeholder={t('search_placeholder')}
               className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all placeholder:text-gray-400 shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -114,10 +116,10 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
               >
-                <option value="all">Todas as Datas</option>
-                <option value="today">Hoje</option>
-                <option value="week">Próximos 7 dias</option>
-                <option value="month">Próximos 30 dias</option>
+                <option value="all">{t('all_dates')}</option>
+                <option value="today">{t('today')}</option>
+                <option value="week">{t('next_7_days')}</option>
+                <option value="month">{t('next_30_days')}</option>
               </select>
             </div>
 
@@ -129,7 +131,7 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
               >
-                <option value="all">Todos os Locais</option>
+                <option value="all">{t('all_locations')}</option>
                 {locations.map(loc => (
                   <option key={loc} value={loc}>{loc}</option>
                 ))}
@@ -147,7 +149,7 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-primary hover:bg-primary-light rounded-xl transition-all whitespace-nowrap"
               >
                 <span className="material-symbols-outlined text-lg">filter_alt_off</span>
-                Limpar
+                {t('clear_filters')}
               </button>
             )}
           </div>
@@ -158,13 +160,13 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
             className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl shadow-lg shadow-green-600/20 hover:bg-green-700 transition-all font-bold text-sm whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-lg">help</span>
-            Como se Inscrever?
+            {t('help')}
           </Link>
         </div>
 
         {(searchTerm || dateFilter !== 'all' || locationFilter !== 'all') && (
           <p className="text-xs text-gray-500 font-medium pl-1 mb-6">
-            {filteredEvents.length} {filteredEvents.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
+            {filteredEvents.length} {filteredEvents.length === 1 ? t('event_found') : t('events_found')}
           </p>
         )}
 
@@ -175,8 +177,8 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
             </span>
             <p className="text-gray-500 font-medium">
               {(searchTerm || dateFilter !== 'all' || locationFilter !== 'all')
-                ? 'Nenhum evento corresponde aos filtros selecionados.'
-                : 'Não há eventos disponíveis para inscrição no momento.'}
+                ? t('no_search_results')
+                : t('no_events_available')}
             </p>
             {(searchTerm || dateFilter !== 'all' || locationFilter !== 'all') && (
               <button
@@ -187,7 +189,7 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
                 }}
                 className="mt-4 text-primary font-bold hover:underline"
               >
-                Limpar todos os filtros
+                {t('clear_all_filters')}
               </button>
             )}
           </div>
@@ -196,7 +198,7 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
             {filteredEvents.map(evento => {
               const eventDate = new Date(evento.data);
               const day = eventDate.getDate();
-              const month = eventDate.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase();
+              const month = eventDate.toLocaleDateString(locale, { month: 'short' }).replace('.', '').toUpperCase();
 
               return (
                 <div
@@ -225,17 +227,23 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
                   {/* Card Content */}
                   <div className="flex-grow p-6">
                     <h3 className="text-xl font-black text-gray-900 mb-4 line-clamp-2">
-                      {evento.nome}
+                      {t(evento.nome)}
                     </h3>
 
                     <div className="space-y-3 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-xl">schedule</span>
-                        <span className="font-semibold">{evento.horario}</span>
+                        <span className="font-semibold">
+                          <span className="text-[10px] uppercase text-gray-400 mr-1">{t('when')}:</span>
+                          {evento.horario}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-xl">location_on</span>
-                        <span className="font-semibold">{evento.local}</span>
+                        <span className="font-semibold">
+                          <span className="text-[10px] uppercase text-gray-400 mr-1">{t('where')}:</span>
+                          {evento.local}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -246,7 +254,7 @@ const PublicEventList: React.FC<PublicEventListProps> = ({ eventos }) => {
                       to={`/evento/${evento.id}`}
                       className="block w-full bg-primary text-white px-6 py-3.5 rounded-xl font-black text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all text-center"
                     >
-                      Inscreva-se
+                      {t('register_now')}
                     </Link>
                   </div>
                 </div>

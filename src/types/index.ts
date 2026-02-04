@@ -9,7 +9,7 @@ export interface Evento {
   encerrado: boolean;
   inscritos: Inscrito[];
   imagem?: string;
-  tipo?: 'interno' | 'externo';
+  tipo?: 'interno' | 'externo' | 'mobilidade';
 }
 
 export interface Inscrito {
@@ -26,6 +26,9 @@ export interface Inscrito {
   qrToken?: string;
   checkedIn?: boolean;
   checkinDate?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
 }
 
 export enum Escolaridade {

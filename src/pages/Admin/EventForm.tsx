@@ -22,7 +22,7 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, onUpload, initi
     descricao: '',
     local: 'Auditório UNINASSAU Olinda',
     imagem: '',
-    tipo: 'interno' as 'interno' | 'externo'
+    tipo: 'interno' as 'interno' | 'externo' | 'mobilidade'
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -142,9 +142,10 @@ const AdminEventForm: React.FC<AdminEventFormProps> = ({ onSave, onUpload, initi
             >
               <option value="interno">🎓 Evento Interno (Formulário Completo)</option>
               <option value="externo">🌍 Evento Externo (Formulário Simplificado)</option>
+              <option value="mobilidade">✈️ Evento de Mobilidade (Simplificado + Localização)</option>
             </select>
             <p className="text-[10px] text-gray-400 font-medium">
-              Eventos externos solicitam apenas Nome, Telefone e Interesse em Graduação.
+              Eventos externos e de mobilidade solicitam informações simplificadas, sendo que mobilidade inclui Cidade, Estado e País.
             </p>
           </div>
 

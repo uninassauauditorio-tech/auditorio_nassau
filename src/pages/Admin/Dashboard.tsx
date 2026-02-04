@@ -263,6 +263,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ eventos }) => {
                             Interno
                           </span>
                         )}
+                        {evento.tipo === 'mobilidade' && (
+                          <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[8px] font-black uppercase tracking-widest rounded-md border border-amber-100">
+                            Mobilidade
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-gray-400 font-medium">{evento.local}</p>
                     </div>

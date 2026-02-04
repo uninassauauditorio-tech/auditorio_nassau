@@ -15,62 +15,66 @@ import PublicEventRegistration from './pages/Public/EventRegistration';
 import CheckinPage from './pages/Public/Checkin';
 import TutorialPage from './pages/Public/TutorialPage';
 
+import { LanguageProvider, useLanguage } from './hooks/useLanguage';
+
 const App: React.FC = () => {
   const store = useStore();
 
   return (
-    <HashRouter>
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow">
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<PublicEventList eventos={store.eventos} />} />
-            <Route
-              path="/evento/:id"
-              element={<PublicEventRegistration eventos={store.eventos} isLoading={store.isLoading} onRegister={store.registrarInscrito} />}
-            />
-            <Route
-              path="/checkin"
-              element={<CheckinPage validateCheckin={store.validateCheckin} />}
-            />
-            <Route
-              path="/tutorial"
-              element={<TutorialPage />}
-            />
+    <LanguageProvider>
+      <HashRouter>
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-grow">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<PublicEventList eventos={store.eventos} />} />
+              <Route
+                path="/evento/:id"
+                element={<PublicEventRegistration eventos={store.eventos} isLoading={store.isLoading} onRegister={store.registrarInscrito} />}
+              />
+              <Route
+                path="/checkin"
+                element={<CheckinPage validateCheckin={store.validateCheckin} />}
+              />
+              <Route
+                path="/tutorial"
+                element={<TutorialPage />}
+              />
 
-            {/* Custom Admin Login Route */}
-            <Route path="/admin/login" element={<AdminLogin />} />
+              {/* Custom Admin Login Route */}
+              <Route path="/admin/login" element={<AdminLogin />} />
 
-            {/* Protected Admin Routes */}
-            <Route
-              path="/admin/*"
-              element={
-                <>
-                  <SignedIn>
-                    <Routes>
-                      <Route index element={<AdminDashboard eventos={store.eventos} />} />
-                      <Route path="arquivo" element={<AdminArchive eventos={store.eventos} />} />
-                      <Route path="novo" element={<AdminEventForm onSave={store.addEvento} onUpload={store.uploadImage} />} />
-                      <Route path="evento/:id" element={<AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onDeleteRegistration={store.deleteInscrito} onCheckin={store.validateCheckin} />} />
-                      <Route path="evento/:id/editar" element={<AdminEventEditWrapper eventos={store.eventos} isLoading={store.isLoading} onSave={store.updateEvento} onUpload={store.uploadImage} />} />
-                      <Route path="documentacao" element={<AdminDocumentation />} />
-                    </Routes>
-                  </SignedIn>
-                  <SignedOut>
-                    <Navigate to="/admin/login" replace />
-                  </SignedOut>
-                </>
-              }
-            />
+              {/* Protected Admin Routes */}
+              <Route
+                path="/admin/*"
+                element={
+                  <>
+                    <SignedIn>
+                      <Routes>
+                        <Route index element={<AdminDashboard eventos={store.eventos} />} />
+                        <Route path="arquivo" element={<AdminArchive eventos={store.eventos} />} />
+                        <Route path="novo" element={<AdminEventForm onSave={store.addEvento} onUpload={store.uploadImage} />} />
+                        <Route path="evento/:id" element={<AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onDeleteRegistration={store.deleteInscrito} onCheckin={store.validateCheckin} />} />
+                        <Route path="evento/:id/editar" element={<AdminEventEditWrapper eventos={store.eventos} isLoading={store.isLoading} onSave={store.updateEvento} onUpload={store.uploadImage} />} />
+                        <Route path="documentacao" element={<AdminDocumentation />} />
+                      </Routes>
+                    </SignedIn>
+                    <SignedOut>
+                      <Navigate to="/admin/login" replace />
+                    </SignedOut>
+                  </>
+                }
+              />
 
-            {/* Catch All */}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </HashRouter>
+              {/* Catch All */}
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </HashRouter>
+    </LanguageProvider>
   );
 };
 

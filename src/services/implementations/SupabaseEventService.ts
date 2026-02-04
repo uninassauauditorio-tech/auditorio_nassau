@@ -36,7 +36,10 @@ export class SupabaseEventService implements EventService {
                     dataInscricao: reg.data_inscricao,
                     qrToken: reg.qr_token,
                     checkedIn: reg.checked_in,
-                    checkinDate: reg.checkin_date
+                    checkinDate: reg.checkin_date,
+                    cidade: reg.cidade,
+                    estado: reg.estado,
+                    pais: reg.pais
                 }))
             }));
         } catch (e) {
@@ -80,7 +83,10 @@ export class SupabaseEventService implements EventService {
                     dataInscricao: reg.data_inscricao,
                     qrToken: reg.qr_token,
                     checkedIn: reg.checked_in,
-                    checkinDate: reg.checkin_date
+                    checkinDate: reg.checkin_date,
+                    cidade: reg.cidade,
+                    estado: reg.estado,
+                    pais: reg.pais
                 }))
             };
         } catch (e) {
@@ -116,6 +122,7 @@ export class SupabaseEventService implements EventService {
             local: data.local,
             encerrado: false,
             imagem: data.imagem_url,
+            tipo: data.tipo || 'interno',
             inscritos: []
         };
     }
@@ -190,7 +197,10 @@ export class SupabaseEventService implements EventService {
                 interesse: inscritoData.interesseTipo === 'Pós-graduação' ? 'pos' :
                     inscritoData.interesseTipo === 'Segunda Graduação' ? 'segunda_graduacao' : 'graduacao',
                 curso: inscritoData.cursoInteresse,
-                qr_token: qrToken
+                qr_token: qrToken,
+                cidade: inscritoData.cidade,
+                estado: inscritoData.estado,
+                pais: inscritoData.pais
             }])
             .select()
             .single();
@@ -210,7 +220,10 @@ export class SupabaseEventService implements EventService {
             dataInscricao: data.data_inscricao,
             qrToken: data.qr_token,
             checkedIn: data.checked_in,
-            checkinDate: data.checkin_date
+            checkinDate: data.checkin_date,
+            cidade: data.cidade,
+            estado: data.estado,
+            pais: data.pais
         };
     }
 
