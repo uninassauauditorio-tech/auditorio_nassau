@@ -29,6 +29,10 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
   const [deletePassword, setDeletePassword] = useState('');
   const [passwordError, setPasswordError] = useState(false);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
+
   // Modal States
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -93,6 +97,18 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
 
     return result;
   }, [evento, searchTerm, statusFilter, sortOrder]);
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, sortOrder]);
+
+  const paginatedInscritos = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredInscritos.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredInscritos, currentPage]);
+
+  const totalPages = Math.ceil(filteredInscritos.length / itemsPerPage);
 
   if (!evento) {
     return <div className="text-center py-20 font-bold text-gray-400">Evento institucional não localizado.</div>;
@@ -447,7 +463,12 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
           <div className="bg-white md:rounded-[2.5rem] shadow-sm border-y md:border border-gray-100 overflow-hidden">
             <div className="p-5 md:p-8 border-b flex flex-col gap-6 no-print">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h3 className="text-lg md:text-xl font-black text-gray-900">Participantes Registrados</h3>
+                <div className="flex flex-col">
+                  <h3 className="text-lg md:text-xl font-black text-gray-900">Participantes Registrados</h3>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Mostrando {paginatedInscritos.length} de {filteredInscritos.length} participantes
+                  </p>
+                </div>
                 {evento.inscritos.length > 0 && (
                   <button
                     onClick={handleExport}
@@ -520,11 +541,68 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
             </div>
 
             <Table
-              data={filteredInscritos}
+              data={paginatedInscritos}
               columns={columns}
               keyExtractor={(item) => item.id}
               emptyMessage={searchTerm || statusFilter !== 'all' ? "Nenhum participante encontrado com esses filtros." : "Aguardando primeiros registros"}
             />
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 p-6 bg-gray-50/50 border-t no-print">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="size-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-primary hover:border-primary disabled:opacity-30 disabled:pointer-events-none transition-all shadow-sm"
+                >
+                  <span className="material-symbols-outlined">chevron_left</span>
+                </button>
+
+                <div className="flex items-center gap-1 px-4">
+                  {[...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    // Show first, last, current, and pages around current
+                    if (
+                      pageNum === 1 ||
+                      pageNum === totalPages ||
+                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`size-10 rounded-xl text-xs font-black transition-all ${currentPage === pageNum
+                            ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                            : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    }
+                    if (
+                      (pageNum === 2 && currentPage > 3) ||
+                      (pageNum === totalPages - 1 && currentPage < totalPages - 2)
+                    ) {
+                      return <span key={pageNum} className="text-gray-300 text-xs font-bold">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="size-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-primary hover:border-primary disabled:opacity-30 disabled:pointer-events-none transition-all shadow-sm"
+                >
+                  <span className="material-symbols-outlined">chevron_right</span>
+                </button>
+
+                <div className="ml-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  Total: {filteredInscritos.length} registros
+                </div>
+              </div>
+            )}
 
             <div className="hidden print-only p-20 mt-20 border-t-0">
               <div className="flex justify-between gap-12">

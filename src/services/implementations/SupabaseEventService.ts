@@ -6,42 +6,75 @@ export class SupabaseEventService implements EventService {
     async getEvents(): Promise<Evento[]> {
         if (!supabase) return [];
         try {
-            const { data, error } = await supabase
+            const { data: events, error: eventsError } = await supabase
                 .from('events')
-                .select('*, registrations(*)')
-                .order('data_evento', { ascending: false });
+                .select('*')
+                .order('data_evento', { ascending: false })
+                .limit(1000);
 
-            if (error) throw error;
+            if (eventsError) throw eventsError;
 
-            return (data || []).map((event: any) => ({
-                id: event.id,
-                nome: event.nome_evento,
-                data: event.data_evento,
-                horario: event.horario_evento || '00:00',
-                descricao: event.descricao || '',
-                local: event.local,
-                encerrado: event.status === 'encerrado',
-                imagem: event.imagem_url,
-                tipo: event.tipo || 'interno',
-                inscritos: (event.registrations || []).map((reg: any) => ({
-                    id: reg.id,
-                    nomeCompleto: reg.nome,
-                    telefone: reg.telefone,
-                    cpf: reg.cpf,
-                    email: reg.email,
-                    escolaridade: reg.escolaridade,
-                    interesseGraduacao: reg.interesse === 'graduacao' ? 'Sim' : 'Não',
-                    interesseTipo: reg.interesse,
-                    cursoInteresse: reg.curso,
-                    dataInscricao: reg.data_inscricao,
-                    qrToken: reg.qr_token,
-                    checkedIn: reg.checked_in,
-                    checkinDate: reg.checkin_date,
-                    cidade: reg.cidade,
-                    estado: reg.estado,
-                    pais: reg.pais
-                }))
+            // Fetch registrations for all events in parallel to be faster
+            const eventsWithInscritos = await Promise.all((events || []).map(async (event: any) => {
+                let allRegistrations: any[] = [];
+                let page = 0;
+                const pageSize = 1000;
+                let hasMore = true;
+
+                while (hasMore) {
+                    const { data: regs, error: regsError } = await supabase
+                        .from('registrations')
+                        .select('*')
+                        .eq('event_id', event.id)
+                        .range(page * pageSize, (page + 1) * pageSize - 1)
+                        .order('data_inscricao', { ascending: true });
+
+                    if (regsError) throw regsError;
+
+                    if (regs && regs.length > 0) {
+                        allRegistrations = [...allRegistrations, ...regs];
+                        if (regs.length < pageSize) {
+                            hasMore = false;
+                        } else {
+                            page++;
+                        }
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                return {
+                    id: event.id,
+                    nome: event.nome_evento,
+                    data: event.data_evento,
+                    horario: event.horario_evento || '00:00',
+                    descricao: event.descricao || '',
+                    local: event.local,
+                    encerrado: event.status === 'encerrado',
+                    imagem: event.imagem_url,
+                    tipo: event.tipo || 'interno',
+                    inscritos: allRegistrations.map((reg: any) => ({
+                        id: reg.id,
+                        nomeCompleto: reg.nome,
+                        telefone: reg.telefone,
+                        cpf: reg.cpf,
+                        email: reg.email,
+                        escolaridade: reg.escolaridade,
+                        interesseGraduacao: reg.interesse === 'graduacao' ? 'Sim' : 'Não',
+                        interesseTipo: reg.interesse,
+                        cursoInteresse: reg.curso,
+                        dataInscricao: reg.data_inscricao,
+                        qrToken: reg.qr_token,
+                        checkedIn: reg.checked_in,
+                        checkinDate: reg.checkin_date,
+                        cidade: reg.cidade,
+                        estado: reg.estado,
+                        pais: reg.pais
+                    }))
+                };
             }));
+
+            return eventsWithInscritos;
         } catch (e) {
             console.error('Erro ao buscar eventos:', e);
             return [];
@@ -51,26 +84,52 @@ export class SupabaseEventService implements EventService {
     async getEventById(id: string): Promise<Evento | undefined> {
         if (!supabase) return undefined;
         try {
-            const { data, error } = await supabase
+            const { data: event, error: eventError } = await supabase
                 .from('events')
-                .select('*, registrations(*)')
+                .select('*')
                 .eq('id', id)
                 .single();
 
-            if (error) throw error;
-            if (!data) return undefined;
+            if (eventError || !event) return undefined;
+
+            let allRegistrations: any[] = [];
+            let page = 0;
+            const pageSize = 1000;
+            let hasMore = true;
+
+            while (hasMore) {
+                const { data: regs, error: regsError } = await supabase
+                    .from('registrations')
+                    .select('*')
+                    .eq('event_id', event.id)
+                    .range(page * pageSize, (page + 1) * pageSize - 1)
+                    .order('data_inscricao', { ascending: true });
+
+                if (regsError) throw regsError;
+
+                if (regs && regs.length > 0) {
+                    allRegistrations = [...allRegistrations, ...regs];
+                    if (regs.length < pageSize) {
+                        hasMore = false;
+                    } else {
+                        page++;
+                    }
+                } else {
+                    hasMore = false;
+                }
+            }
 
             return {
-                id: data.id,
-                nome: data.nome_evento,
-                data: data.data_evento,
-                horario: data.horario_evento || '00:00',
-                descricao: data.descricao || '',
-                local: data.local,
-                encerrado: data.status === 'encerrado',
-                imagem: data.imagem_url,
-                tipo: data.tipo || 'interno',
-                inscritos: (data.registrations || []).map((reg: any) => ({
+                id: event.id,
+                nome: event.nome_evento,
+                data: event.data_evento,
+                horario: event.horario_evento || '00:00',
+                descricao: event.descricao || '',
+                local: event.local,
+                encerrado: event.status === 'encerrado',
+                imagem: event.imagem_url,
+                tipo: event.tipo || 'interno',
+                inscritos: allRegistrations.map((reg: any) => ({
                     id: reg.id,
                     nomeCompleto: reg.nome,
                     telefone: reg.telefone,
