@@ -92,6 +92,7 @@ export const translations: Translations = {
     'where': { pt: 'Onde', en: 'Where', es: 'Dónde' },
     'institution_local': { pt: 'Auditório UNINASSAU', en: 'UNINASSAU Auditorium', es: 'Auditorio UNINASSAU' },
     'participant': { pt: 'Participante', en: 'Participant', es: 'Participante' },
+    'origin': { pt: 'Origem', en: 'Origin', es: 'Origen' },
 
     // States
     'event_not_available': { pt: 'Evento Não Disponível', en: 'Event Not Available', es: 'Evento no disponible' },

@@ -161,15 +161,18 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
   };
 
   const handleExport = () => {
-    const headers = ["Nome Completo", "CPF", "Telefone", "E-mail", "Escolaridade", "Interesse/Tipo", "Curso Interesse", "Data/Hora Registro", "Presença", "Data/Hora Check-in"];
+    const headers = ["Nome Completo", "CPF", "Telefone", "E-mail", "Escolaridade", "Interesse/Tipo", "Curso Interesse", "Cidade", "Estado", "País", "Data/Hora Registro", "Presença", "Data/Hora Check-in"];
     const rows = evento.inscritos.map(i => [
       i.nomeCompleto,
-      i.cpf,
+      i.cpf || 'N/A',
       i.telefone,
-      i.email,
-      i.escolaridade,
+      i.email || 'N/A',
+      i.escolaridade || 'N/A',
       i.interesseGraduacao || i.interesseTipo || 'N/A',
       i.cursoInteresse || 'N/A',
+      i.cidade || 'N/A',
+      i.estado || 'N/A',
+      i.pais || 'N/A',
       new Date(i.dataInscricao).toLocaleString('pt-BR'),
       i.checkedIn ? 'SIM' : 'NÃO',
       i.checkinDate ? new Date(i.checkinDate).toLocaleString('pt-BR') : 'N/A'
@@ -213,6 +216,19 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
       ) : (
         <span className="text-[10px] text-gray-300 font-bold italic">Nenhum</span>
       )
+    },
+    {
+      header: 'Origem',
+      accessor: (item) => (item.cidade || item.estado || item.pais) ? (
+        <div className="min-w-[120px]">
+          <p className="text-[10px] font-bold text-gray-800 leading-tight">
+            {item.cidade}{item.estado ? `, ${item.estado}` : ''}
+          </p>
+          <p className="text-[8px] font-black text-primary uppercase tracking-widest leading-none mt-1">{item.pais}</p>
+        </div>
+      ) : (
+        <span className="text-[10px] text-gray-300 font-bold italic">N/A</span>
+      ),
     },
     {
       header: 'Data Registro',
@@ -542,7 +558,10 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
 
             <Table
               data={paginatedInscritos}
-              columns={columns}
+              columns={columns.filter(col => {
+                if (col.header === 'Origem' && evento.tipo !== 'mobilidade') return false;
+                return true;
+              })}
               keyExtractor={(item) => item.id}
               emptyMessage={searchTerm || statusFilter !== 'all' ? "Nenhum participante encontrado com esses filtros." : "Aguardando primeiros registros"}
             />

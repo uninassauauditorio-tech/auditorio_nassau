@@ -62,10 +62,19 @@ export const generateReceipt = async (evento: Evento, inscrito: Inscrito, onSucc
                     <p style="color: ${secondaryColor}; font-size: 15px; font-weight: 700; margin: 0;">${new Date(evento.data).toLocaleDateString('pt-BR')} às ${evento.horario}</p>
                 </div>
 
-                <div style="margin-bottom: 40px;">
+                <div style="margin-bottom: 30px;">
                     <p style="color: #999; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;">Local</p>
                     <p style="color: ${secondaryColor}; font-size: 15px; font-weight: 700; margin: 0;">${evento.local}</p>
                 </div>
+
+                ${(inscrito.cidade || inscrito.estado || inscrito.pais) ? `
+                <div style="margin-bottom: 30px;">
+                    <p style="color: #999; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;">Origem</p>
+                    <p style="color: ${secondaryColor}; font-size: 15px; font-weight: 700; margin: 0;">
+                        ${inscrito.cidade ? inscrito.cidade : ''}${inscrito.estado ? `, ${inscrito.estado}` : ''}${(inscrito.cidade || inscrito.estado) && inscrito.pais ? ' - ' : ''}${inscrito.pais ? inscrito.pais : ''}
+                    </p>
+                </div>
+                ` : ''}
 
                 <!-- QR Code - Centered in remaining space -->
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">

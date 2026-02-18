@@ -361,6 +361,15 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
                 <p className="text-sm font-bold text-gray-700">{t(evento.nome)}</p>
               </div>
             </div>
+
+            {(formData.cidade || formData.estado || formData.pais) && (
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('origin')}</p>
+                <p className="text-sm font-bold text-gray-700">
+                  {formData.cidade}{formData.estado ? `, ${formData.estado}` : ''} - {formData.pais}
+                </p>
+              </div>
+            )}
           </div>
 
           {!isDownloaded && (
