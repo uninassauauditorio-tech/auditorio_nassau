@@ -92,8 +92,23 @@ Se preparar um ambiente de desenvolvimento local for preciso, siga os passos est
 
 ---
 
-## 7. Observações
+## 8. Funcionalidades de Redirecionamento (Link Externo)
+
+Implementada em Abril de 2026, esta funcionalidade permite a criação de eventos que atuam como "pontes" para serviços externos (ex: Avaliação Institucional, AV1, formulários externos).
+
+**Características Principais:**
+- **Captura Simplificada:** Diferente de eventos normais, solicita apenas a **Matrícula** do aluno. O nome e CPF são preenchidos automaticamente com a matrícula para manter a compatibilidade do banco.
+- **Redirecionamento Automático:** Após o registro do acesso, o sistema redireciona o aluno instantaneamente para a URL cadastrada no campo `link_externo`.
+- **Privacidade (Oculto na Home):** Eventos deste tipo **não aparecem** na lista pública do site. O acesso é feito exclusivamente via link direto ou QR Code gerado no painel.
+- **Visual de Cartaz para Impressão:** O gerador de QR Code possui um layout específico para estes eventos, imitando cartazes institucionais reais (com cabeçalho cinza e faixas escuras).
+
+**Requisito de Banco de Dados:**
+- Tabela `events`: Requer a coluna `link_externo` (tipo `text`) e a permissão do valor `'link_externo'` na restrição de verificação (`CHECK CONSTRAINT`) da coluna `tipo`.
+
+---
+
+## 9. Observações fnais
 
 - **Não altere componentes diretos de roteamento sem certificar credenciais:** Componentes `<SignedIn>` em `App.tsx` amarram as sessões fortemente, sendo fundamental a integridade para não haver vazamento de rotas e dados de participantes.
-- **Sem servidor monolítico de Back-end:** Todas as funções que demandam escrita e leitura pesadas ocorrem diretamente aos serviços BaaS (Supabase e Clerk Firebase/Auth), centralizando a segurança base nesses acessos.
-- **Acesso Contido ao Manual:** Como estabelecido em premissa institucional, detalhes super aprofundados dos botões administrativos estão disponíveis operando *in loco* em `/admin/documentacao`.
+- **Geração de QR Code:** O sistema utiliza `jspdf` para gerar PDFs A4 prontos para impressão. O layout se adapta automaticamente ao tipo do evento.
+- **Sem servidor monolítico de Back-end:** Todas as funções que demandam escrita e leitura pesadas ocorrem diretamente aos serviços BaaS (Supabase e Clerk), centralizando a segurança base nesses acessos.
