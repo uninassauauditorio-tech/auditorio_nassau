@@ -193,7 +193,7 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
       sortable: true
     },
     {
-      header: 'CPF',
+      header: evento.tipo === 'link_externo' ? 'Matrícula' : 'CPF',
       accessor: 'cpf',
       className: 'text-[11px] font-bold text-gray-700 min-w-[100px]'
     },
@@ -246,18 +246,18 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
       sortable: true
     },
     {
-      header: 'Presença',
+      header: evento.tipo === 'link_externo' ? 'Status' : 'Presença',
       accessor: (item) => (
         <div className="text-center min-w-[100px]">
-          {item.checkedIn ? (
+          {item.checkedIn || evento.tipo === 'link_externo' ? (
             <div className="flex flex-col items-center">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-green-100 text-green-600 border border-green-200">
                 <span className="material-symbols-outlined text-[12px]">check_circle</span>
-                PRESENTE
+                {evento.tipo === 'link_externo' ? 'ACESSOU' : 'PRESENTE'}
               </span>
-              {item.checkinDate && (
+              {(item.checkinDate || evento.tipo === 'link_externo') && (
                 <p className="text-[8px] text-gray-400 font-bold mt-1">
-                  {new Date(item.checkinDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(item.checkinDate || item.dataInscricao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                 </p>
               )}
             </div>
@@ -276,7 +276,12 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
       header: 'Ações',
       accessor: (item) => (
         <div className="flex justify-center gap-2 no-print">
-          {!item.checkedIn ? (
+          {(item.checkedIn || evento.tipo === 'link_externo') ? (
+            <span className="text-[9px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1">
+              <span className="material-symbols-outlined text-[14px]">done_all</span>
+              {evento.tipo === 'link_externo' ? 'Registrado' : 'Validado'}
+            </span>
+          ) : (
             <button
               onClick={async () => {
                 setConfirmConfig({
@@ -302,23 +307,18 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
               <span className="material-symbols-outlined text-[14px]">how_to_reg</span>
               Confirmar
             </button>
-          ) : (
-            <span className="text-[9px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">done_all</span>
-              Validado
-            </span>
           )}
 
           <button
             onClick={() => generateReceipt(evento, item)}
-            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1 shadow-sm ${item.checkedIn
+            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1 shadow-sm ${item.checkedIn || evento.tipo === 'link_externo'
               ? 'bg-green-50 text-green-600 border border-green-200 hover:bg-green-100'
               : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
               }`}
             title={item.checkedIn ? "Gerar Certificado de Presença" : "Reimprimir Comprovante de Inscrição"}
           >
             <span className="material-symbols-outlined text-[14px]">{item.checkedIn ? 'verified' : 'print'}</span>
-            {item.checkedIn ? 'Certificado' : 'Recibo'}
+            {(item.checkedIn || evento.tipo === 'link_externo') ? 'Certificado' : 'Recibo'}
           </button>
 
           <button
@@ -413,7 +413,12 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
             </div>
 
             <div className="mb-6">
-              {evento.tipo === 'externo' ? (
+              {evento.tipo === 'link_externo' ? (
+                <span className="px-4 py-1.5 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-green-100 flex items-center gap-2 w-fit">
+                  <span className="material-symbols-outlined text-sm">link</span>
+                  Redirecionamento Externo
+                </span>
+              ) : evento.tipo === 'externo' ? (
                 <span className="px-4 py-1.5 bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-purple-100 flex items-center gap-2 w-fit">
                   <span className="material-symbols-outlined text-sm">public</span>
                   Evento Externo
@@ -462,14 +467,24 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
           </div>
 
           <div className="bg-primary p-6 md:p-8 rounded-[2rem] shadow-xl shadow-primary/20 text-white relative overflow-hidden group">
-            <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-white/10 text-7xl md:text-9xl group-hover:scale-110 transition-transform">group</span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-primary-light/70 mb-1">Presenças Confirmadas</p>
+            <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-white/10 text-7xl md:text-9xl group-hover:scale-110 transition-transform">
+              {evento.tipo === 'link_externo' ? 'ads_click' : 'group'}
+            </span>
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary-light/70 mb-1">
+              {evento.tipo === 'link_externo' ? 'Total de Acessos' : 'Presenças Confirmadas'}
+            </p>
             <div className="flex items-baseline gap-2">
-              <p className="text-4xl md:text-6xl font-black">{evento.inscritos.filter(i => i.checkedIn).length}</p>
-              <p className="text-lg md:text-xl font-bold text-primary-light/60">/ {evento.inscritos.length}</p>
+              <p className="text-4xl md:text-6xl font-black">
+                {evento.tipo === 'link_externo' ? evento.inscritos.length : evento.inscritos.filter(i => i.checkedIn).length}
+              </p>
+              {evento.tipo !== 'link_externo' && (
+                <p className="text-lg md:text-xl font-bold text-primary-light/60">/ {evento.inscritos.length}</p>
+              )}
             </div>
             <p className="text-[9px] font-bold text-primary-light/50 mt-2 uppercase tracking-tighter">
-              {((evento.inscritos.filter(i => i.checkedIn).length / (evento.inscritos.length || 1)) * 100).toFixed(0)}% de comparecimento
+              {evento.tipo === 'link_externo' 
+                ? 'Acessos registrados via QR Code' 
+                : `${((evento.inscritos.filter(i => i.checkedIn).length / (evento.inscritos.length || 1)) * 100).toFixed(0)}% de comparecimento`}
             </p>
           </div>
         </div>
@@ -480,9 +495,11 @@ const AdminEventDetails: React.FC<AdminEventDetailsProps> = ({ eventos, onEnd, o
             <div className="p-5 md:p-8 border-b flex flex-col gap-6 no-print">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-col">
-                  <h3 className="text-lg md:text-xl font-black text-gray-900">Participantes Registrados</h3>
+                  <h3 className="text-lg md:text-xl font-black text-gray-900">
+                    {evento.tipo === 'link_externo' ? 'Lista de Acessos' : 'Participantes Registrados'}
+                  </h3>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                    Mostrando {paginatedInscritos.length} de {filteredInscritos.length} participantes
+                    Mostrando {paginatedInscritos.length} de {filteredInscritos.length} registros
                   </p>
                 </div>
                 {evento.inscritos.length > 0 && (
