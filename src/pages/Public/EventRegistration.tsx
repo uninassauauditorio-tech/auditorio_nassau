@@ -479,18 +479,9 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
               </Button>
             </form>
 
-            <div className="mt-10 flex flex-col items-center gap-3">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">
-                Acesso Institucional Seguro
-              </p>
-              
-              <div className="px-4 py-1.5 bg-primary/5 border border-primary/10 rounded-full flex items-center gap-2">
-                <span className="size-2 bg-primary rounded-full animate-pulse"></span>
-                <span className="text-[10px] font-black text-primary uppercase tracking-widest">
-                  {evento.inscritos.length} {evento.inscritos.length === 1 ? 'ACESSO REGISTRADO' : 'ACESSOS REGISTRADOS'}
-                </span>
-              </div>
-            </div>
+            <p className="mt-10 text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">
+              Acesso Institucional Seguro
+            </p>
           </div>
         </div>
 
