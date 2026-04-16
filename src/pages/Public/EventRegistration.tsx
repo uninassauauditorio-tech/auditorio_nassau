@@ -446,10 +446,10 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
 
             <div className="text-center mb-10">
               <h2 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">
-                Acesso ao Link
+                {evento.nome}
               </h2>
-              <p className="text-gray-500 text-sm leading-relaxed">
-                Digite sua matrícula para acessar o link.
+              <p className="text-gray-500 text-sm leading-relaxed whitespace-pre-wrap">
+                {evento.descricao || "Digite sua matrícula para acessar o link."}
               </p>
             </div>
 
