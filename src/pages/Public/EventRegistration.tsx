@@ -434,24 +434,9 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
     );
   }
 
-  // Effect to hide global Header/Footer for clean view
-  React.useEffect(() => {
-    if (isLinkExterno) {
-      const header = document.querySelector('header');
-      const footer = document.querySelector('footer');
-      if (header) header.style.display = 'none';
-      if (footer) footer.style.display = 'none';
-      
-      return () => {
-        if (header) header.style.display = '';
-        if (footer) footer.style.display = '';
-      };
-    }
-  }, [isLinkExterno]);
-
   if (isLinkExterno) {
     return (
-      <div className="fixed inset-0 bg-gray-50 z-[9999] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full animate-in">
           <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-2xl shadow-primary/5 border border-gray-100 flex flex-col items-center">
             {/* Logo Centralizada */}
@@ -460,14 +445,11 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
             </div>
 
             <div className="text-center mb-10">
-              <div className="size-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm mx-auto">
-                <span className="material-symbols-outlined text-3xl font-black">link</span>
-              </div>
-              <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">
+              <h2 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">
                 Acesso ao Link
               </h2>
               <p className="text-gray-500 text-sm leading-relaxed">
-                Digite sua matrícula abaixo para registrar seu acesso e ser redirecionado(a) imediatamente.
+                Digite sua matrícula para acessar o link.
               </p>
             </div>
 

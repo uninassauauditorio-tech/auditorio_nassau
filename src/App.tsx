@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import { useStore } from './hooks/useEvents';
 import Header from './components/Header';
@@ -17,62 +17,75 @@ import TutorialPage from './pages/Public/TutorialPage';
 
 import { LanguageProvider, useLanguage } from './hooks/useLanguage';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const store = useStore();
+  const location = useLocation();
 
+  // Check if current route is a link_externo event
+  const eventMatch = location.pathname.match(/^\/evento\/(.+)$/);
+  const currentEventId = eventMatch ? eventMatch[1] : null;
+  const currentEvent = currentEventId ? store.eventos.find(e => e.id === currentEventId) : null;
+  const isLinkExternoPage = currentEvent?.tipo === 'link_externo';
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {!isLinkExternoPage && <Header />}
+      <main className="flex-grow">
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<PublicEventList eventos={store.eventos} />} />
+          <Route
+            path="/evento/:id"
+            element={<PublicEventRegistration eventos={store.eventos} isLoading={store.isLoading} onRegister={store.registrarInscrito} />}
+          />
+          <Route
+            path="/checkin"
+            element={<CheckinPage validateCheckin={store.validateCheckin} />}
+          />
+          <Route
+            path="/tutorial"
+            element={<TutorialPage />}
+          />
+
+          {/* Custom Admin Login Route */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+
+          {/* Protected Admin Routes */}
+          <Route
+            path="/admin/*"
+            element={
+              <>
+                <SignedIn>
+                  <Routes>
+                    <Route index element={<AdminDashboard eventos={store.eventos} />} />
+                    <Route path="arquivo" element={<AdminArchive eventos={store.eventos} />} />
+                    <Route path="novo" element={<AdminEventForm onSave={store.addEvento} onUpload={store.uploadImage} />} />
+                    <Route path="evento/:id" element={<AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onDeleteRegistration={store.deleteInscrito} onCheckin={store.validateCheckin} />} />
+                    <Route path="evento/:id/editar" element={<AdminEventEditWrapper eventos={store.eventos} isLoading={store.isLoading} onSave={store.updateEvento} onUpload={store.uploadImage} />} />
+                    <Route path="documentacao" element={<AdminDocumentation />} />
+                  </Routes>
+                </SignedIn>
+                <SignedOut>
+                  <Navigate to="/admin/login" replace />
+                </SignedOut>
+              </>
+            }
+          />
+
+          {/* Catch All */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </main>
+      {!isLinkExternoPage && <Footer />}
+    </div>
+  );
+};
+
+const App: React.FC = () => {
   return (
     <LanguageProvider>
       <HashRouter>
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-grow">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<PublicEventList eventos={store.eventos} />} />
-              <Route
-                path="/evento/:id"
-                element={<PublicEventRegistration eventos={store.eventos} isLoading={store.isLoading} onRegister={store.registrarInscrito} />}
-              />
-              <Route
-                path="/checkin"
-                element={<CheckinPage validateCheckin={store.validateCheckin} />}
-              />
-              <Route
-                path="/tutorial"
-                element={<TutorialPage />}
-              />
-
-              {/* Custom Admin Login Route */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-
-              {/* Protected Admin Routes */}
-              <Route
-                path="/admin/*"
-                element={
-                  <>
-                    <SignedIn>
-                      <Routes>
-                        <Route index element={<AdminDashboard eventos={store.eventos} />} />
-                        <Route path="arquivo" element={<AdminArchive eventos={store.eventos} />} />
-                        <Route path="novo" element={<AdminEventForm onSave={store.addEvento} onUpload={store.uploadImage} />} />
-                        <Route path="evento/:id" element={<AdminEventDetails eventos={store.eventos} onEnd={store.encerrarEvento} onDelete={store.deleteEvento} onDeleteRegistration={store.deleteInscrito} onCheckin={store.validateCheckin} />} />
-                        <Route path="evento/:id/editar" element={<AdminEventEditWrapper eventos={store.eventos} isLoading={store.isLoading} onSave={store.updateEvento} onUpload={store.uploadImage} />} />
-                        <Route path="documentacao" element={<AdminDocumentation />} />
-                      </Routes>
-                    </SignedIn>
-                    <SignedOut>
-                      <Navigate to="/admin/login" replace />
-                    </SignedOut>
-                  </>
-                }
-              />
-
-              {/* Catch All */}
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <AppContent />
       </HashRouter>
     </LanguageProvider>
   );
