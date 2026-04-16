@@ -571,7 +571,6 @@ const PublicEventRegistration: React.FC<PublicEventRegistrationProps> = ({ event
 
           <div className="lg:col-span-12">
             <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-primary/5 border border-gray-100">
-                <>
                   <h3 className="text-2xl font-black mb-8 flex items-center gap-3">
                     <div className="size-8 bg-primary rounded-lg flex items-center justify-center shadow-sm">
                       <span className="material-symbols-outlined text-white text-lg">edit_note</span>
